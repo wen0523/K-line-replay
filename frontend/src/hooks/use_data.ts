@@ -1,16 +1,16 @@
-import api from '@/lib/api'
+import api from '../lib/api'
+import { timestampToTime } from '../lib/utils'
 
 export function useData() {
     const getData = async () => {
         const response = await api.get('/data');
-        console.log(response.data.data)
-        return response.data.data
-        // const price = response
-        // for (let i = 0; i < price.length; i++) {
-        //   const time = new Date(price[i][0]).toString()
-        //   const t = time.split(' ')
-        //   price[i][0] = t[3] + ' ' + t[2] + ' ' + t[4]
-        // }
+
+        const price = response.data.data
+        for (let i = 0; i < price.length; i++) {
+            price[i][0]  = timestampToTime(price[i][0],'d')
+        }
+        
+        return price;
     }
 
     return {

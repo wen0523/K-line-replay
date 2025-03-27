@@ -1,261 +1,209 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as echarts from 'echarts';
-import { useData } from '@/hooks/use_data';
+import { useData } from '../../hooks/use_data';
 
-// 定义K线图数据类型
-type CandlestickDataItem = [string, number, number, number, number, number, number];
+// 定义K线图数据类型 - 每项包含: [日期, 开盘价, 最高价, 最低价, 收盘价, 成交量, 涨跌标志]
+type CandlestickDataItem = [string, number, number, number, number, number];
 
 const CandlestickChart: React.FC = () => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true); // 初始状态设为true更合理
+  // const [data, setData] = useState<CandlestickDataItem[]>([]);
 
-  const { getData } = useData()
+  const { getData } = useData();
 
-  useEffect(() => {
-    try{
-    setIsLoading(true)
-    getData()
-    // 初始化图表
-    if (chartRef.current) {
+  // Resize
+  const handleResize = () => {
+    if (chartInstance.current) {
+      chartInstance.current.resize();
+    }
+  };
+
+  // 初始化图表的函数，使用useCallback避免重复创建
+  const initChart = async () => {
+    if (!chartRef.current) return;
+
+    try {
+      setIsLoading(true);
+
+      // 如果已经有实例，先销毁它
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+      }
+
+      // 初始化ECharts实例
       chartInstance.current = echarts.init(chartRef.current);
-      
-      const upColor = '#ec0000';
-      const upBorderColor = '#8A0000';
-      const downColor = '#00da3c';
-      const downBorderColor = '#008F28';
-      const data = getData();
-      const dataCount = data.length();
-      
+
+      // 设置颜色方案
+      const upColor = '#00da3c';        // 上涨蜡烛颜色（绿色）
+      const upBorderColor = '#008f28';  // 上涨蜡烛边框颜色
+      const downColor = '#ec0000';      // 下跌蜡烛颜色（红色）
+      const downBorderColor = '#8a0000'; // 下跌蜡烛边框颜色
+
+      // 获取数据
+      const data = await getData();
+
+      if (!data || data.length === 0) {
+        throw new Error('没有获取到数据');
+      }
+
+      const dataCount = data.length;
+
+      // 配置ECharts选项
       const option: echarts.EChartsOption = {
+        // 数据集配置
         dataset: {
-          source: data
+          source: data // 直接使用API返回的数据
         },
+
+        // 标题配置
         title: {
-          text: 'Data Amount: ' + echarts.format.addCommas(dataCount)
+          text: '数据总量: ' + echarts.format.addCommas(dataCount)
         },
+
+        // 提示框配置 - 当鼠标悬停在数据点上时显示的信息
         tooltip: {
           trigger: 'axis',
+          backgroundColor: 'rgba(50,50,50,0.7)',
+          borderColor: '#333',
+          borderWidth: 1,
+          textStyle: {
+            color: '#fff',
+            fontSize: 12
+          },
+          padding: 10,
           axisPointer: {
             type: 'line'
-          }
-        },
-        toolbox: {
-          feature: {
-            dataZoom: {
-              yAxisIndex: false
+          },
+          formatter: (params) => {
+            if (Array.isArray(params)) {
+              const data = params[0].data as CandlestickDataItem;
+              const [date, open, high, low, close, volume] = data;
+              return `
+              <div>
+                <strong>${date}</strong><br/>
+                开盘价: ${open}<br/>
+                最高价: ${high}<br/>
+                最低价: ${low}<br/>
+                收盘价: ${close}<br/>
+                成交量: ${volume}<br/>
+              </div>
+            `;
+            } else {
+              return `
+              <div>
+                <strong>数据获取失败</strong><br/>
+              </div>
+              `
             }
           }
         },
+
+        // 网格配置 - 定义图表的布局
         grid: [
           {
-            left: '10%',
-            right: '10%',
-            bottom: 200
+            left: '5%',      // 主图表区域
+            right: '1%',
+            bottom: 100
           },
-          {
-            left: '10%',
-            right: '10%',
-            height: 80,
-            bottom: 80
-          }
         ],
+
+        // X轴配置 - K线图
         xAxis: [
           {
-            type: 'category',
-            boundaryGap: false,
+            type: 'category',   // 类目轴，适用于离散数据
+            boundaryGap: false, // 两边留白策略
             axisLine: { onZero: false },
             splitLine: { show: false },
-            min: 'dataMin',
-            max: 'dataMax'
+            min: 'dataMin',     // 起始值为数据最小值
+            max: 'dataMax'      // 结束值为数据最大值
           },
-          {
-            type: 'category',
-            gridIndex: 1,
-            boundaryGap: false,
-            axisLine: { onZero: false },
-            axisTick: { show: false },
-            splitLine: { show: false },
-            axisLabel: { show: false },
-            min: 'dataMin',
-            max: 'dataMax'
-          }
         ],
+
+        // Y轴配置 - 同样有两个y轴
         yAxis: [
           {
-            scale: true,
+            scale: true,        // 不强制从零开始，根据数据自动调整
             splitArea: {
-              show: true
+              show: true        // 显示分隔区域
             }
           },
-          {
-            scale: true,
-            gridIndex: 1,
-            splitNumber: 2,
-            axisLabel: { show: false },
-            axisLine: { show: false },
-            axisTick: { show: false },
-            splitLine: { show: false }
-          }
         ],
+
+        // 区域缩放组件配置
         dataZoom: [
           {
-            type: 'inside',
-            xAxisIndex: [0, 1],
-            start: 10,
-            end: 100
+            type: 'inside',     // 内置型数据区域缩放组件（鼠标滚轮缩放）
+            xAxisIndex: [0],    // 控制x轴
+            start: 10,          // 数据窗口范围的起始百分比
+            end: 100            // 数据窗口范围的结束百分比
           },
           {
             show: true,
-            xAxisIndex: [0, 1],
-            type: 'slider',
+            xAxisIndex: [0],
+            type: 'slider',     // 滑动条型数据区域缩放组件
             bottom: 10,
             start: 10,
             end: 100
           }
         ],
-        visualMap: {
-          show: false,
-          seriesIndex: 1,
-          dimension: 6,
-          pieces: [
-            {
-              value: 1,
-              color: upColor
-            },
-            {
-              value: -1,
-              color: downColor
-            }
-          ]
-        },
+
+        // 系列配置 - 定义图表类型和数据映射
         series: [
           {
-            type: 'candlestick',
+            type: 'candlestick',  // K线图类型
             itemStyle: {
-              color: upColor,
-              color0: downColor,
-              borderColor: upBorderColor,
-              borderColor0: downBorderColor
+              color: upColor,      // 上涨时的填充色
+              color0: downColor,   // 下跌时的填充色
+              borderColor: upBorderColor,    // 上涨时的边框色
+              borderColor0: downBorderColor  // 下跌时的边框色
             },
             encode: {
-              x: 0,
-              y: [1, 4, 3, 2]
+              x: 0,                // x轴映射data中的第1个值（日期）
+              y: [1, 4, 3, 2]      // y轴映射data中的[开盘价, 收盘价, 最低价, 最高价]
             }
           },
-          {
-            name: 'Volume',
-            type: 'bar',
-            xAxisIndex: 1,
-            yAxisIndex: 1,
-            itemStyle: {
-              color: '#7fbe9e'
-            },
-            large: true,
-            encode: {
-              x: 0,
-              y: 5
-            }
-          }
         ]
       };
 
+      // 设置配置项并渲染图表
       chartInstance.current.setOption(option);
+
+    } catch (e) {
+      console.error('初始化图表失败:', e);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // 窗口大小改变时，重置图表大小
+  useEffect(() => {
+    // 初始化图表
+    initChart();
+    console.log('initChart')
 
+    // 添加窗口大小变化的监听器
     window.addEventListener('resize', handleResize);
-  }catch(e){
-    console.log(e)
-  }finally{
-    setIsLoading(false)
-  }
 
-    // 组件卸载时清理事件监听器
+    // 组件卸载时清理事件监听器和图表实例
     return () => {
       window.removeEventListener('resize', handleResize);
-      chartInstance.current?.dispose();
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+        chartInstance.current = null;
+      }
     };
   }, []);
 
-  // 生成K线数据
-  function generateOHLC(count: number): CandlestickDataItem[] {
-    let data: CandlestickDataItem[] = [];
-    let xValue = +new Date(2011, 0, 1);
-    let minute = 60 * 1000;
-    let baseValue = Math.random() * 12000;
-    let boxVals = new Array(4);
-    let dayRange = 12;
-    
-    for (let i = 0; i < count; i++) {
-      baseValue = baseValue + Math.random() * 20 - 10;
-      for (let j = 0; j < 4; j++) {
-        boxVals[j] = (Math.random() - 0.5) * dayRange + baseValue;
-      }
-      boxVals.sort();
-      let openIdx = Math.round(Math.random() * 3);
-      let closeIdx = Math.round(Math.random() * 2);
-      if (closeIdx === openIdx) {
-        closeIdx++;
-      }
-      let volume = boxVals[3] * (1000 + Math.random() * 500);
-
-      data[i] = [
-        echarts.format.formatTime('yyyy-MM-dd\nhh:mm:ss', (xValue += minute)),
-        +boxVals[openIdx].toFixed(2),
-        +boxVals[3].toFixed(2),
-        +boxVals[0].toFixed(2),
-        +boxVals[closeIdx].toFixed(2),
-        +volume.toFixed(0),
-        getSign(data, i, +boxVals[openIdx], +boxVals[closeIdx], 4) // sign
-      ];
-    }
-    return data;
-  }
-
-  function getSign(
-    data: CandlestickDataItem[], 
-    dataIndex: number, 
-    openVal: number, 
-    closeVal: number, 
-    closeDimIdx: number
-  ): number {
-    let sign: number;
-    
-    if (openVal > closeVal) {
-      sign = -1;
-    } else if (openVal < closeVal) {
-      sign = 1;
-    } else {
-      sign =
-        dataIndex > 0
-          ? Number(data[dataIndex - 1][closeDimIdx]) <= closeVal
-            ? 1
-            : -1
-          : 1;
-    }
-    
-    return sign;
-  }
-
-  // 窗口大小改变时，重置图表大小
-  const handleResize = () => {
-    chartInstance.current?.resize();
-  };
-
-  return isLoading ? 
-  (<p className='text-3xl'>正在加载数据.....</p>)
-  : (
-    <div 
-      ref={chartRef} 
-      style={{ 
-        width: '100%', 
-        height: '600px' 
-      }}
-    />
+  return (
+    <div
+      ref={chartRef}
+      className="w-full h-[600px]"
+      aria-label="K线图"
+    >
+    </div>
   );
 };
 
