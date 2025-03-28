@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, } from 'react';
 import * as echarts from 'echarts';
 import { useData } from '../../hooks/use_data';
 
