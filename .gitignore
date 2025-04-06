@@ -1,2 +1,5 @@
 /backend/venv
 /backend/env
+/backend/app/**/__pycache__/
+/backend/data/*
+/backend/test.py

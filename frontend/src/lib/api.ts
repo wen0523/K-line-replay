@@ -6,6 +6,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 允许跨域携带 Cookie（如果需要）
 });
 
 // 请求拦截器 - 添加认证token

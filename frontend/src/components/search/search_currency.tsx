@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSearchParams } from "react-router-dom";
 
 //UI
 import { Listbox, ListboxItem, Divider } from "@heroui/react";
@@ -29,6 +31,8 @@ interface Crypto {
 }
 
 const CryptoSearchModal = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCrypto, setSelectedCrypto] = useState({ id: 'btc', name: 'Bitcoin', symbol: 'BTCUSDT' });
@@ -40,11 +44,12 @@ const CryptoSearchModal = () => {
 
     const handleCryptoSelect = (crypto: Crypto) => {
         setSelectedCrypto(crypto);
+        setSearchParams({ currency: crypto.symbol.replace('USDT','/USDT'), timeRange: searchParams.get("timeRange") || "1d" });
         setIsOpen(false);
     };
 
     return (
-        <div className='w-32 h-8 bg-blue-200 rounded-[6px] flex flex-row items-center hover:bg-gray-200'
+        <div className='w-32 h-8 bg-gray-100 rounded-[6px] flex flex-row items-center hover:bg-gray-200'
             onClick={() => { setIsOpen(true) }}>
             <SearchIcon />
             <button className='truncate pl-1'>{selectedCrypto.symbol}</button>
@@ -110,7 +115,7 @@ const CryptoSearchModal = () => {
                             </Listbox>
                         </div>
 
-                        <div className='bg-gray-100 flex flex-1 items-center justify-center'>
+                        <div className='bg-gray-100 flex grow items-center justify-center'>
                             <span className='text-gray-700 text-sm'>只需在图表上开始输入，即可拉出此搜索框</span>
                         </div>
                     </div>

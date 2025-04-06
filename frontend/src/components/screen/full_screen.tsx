@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+
+//svg
+import FullScreenIcon from '../svg/fullscreen';
 
 const PartialFullscreenComponent = () => {
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [container, setContainer] = useState<HTMLElement | null>();
 
     useEffect(() => {
@@ -24,22 +26,9 @@ const PartialFullscreenComponent = () => {
         }
     };
 
-    const handleExitFullscreen = () => {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-            (document as any).webkitExitFullscreen();
-        } else if ((document as any).mozCancelFullScreen) {
-            (document as any).mozCancelFullScreen();
-        } else if ((document as any).msExitFullscreen) {
-            (document as any).msExitFullscreen();
-        }
-    };
-
     return (
-        <div>
-            <button onClick={handleEnterFullscreen}>进入全屏</button>
-            <button onClick={handleExitFullscreen}>退出全屏</button>
+        <div className='size-8 hover:bg-gray-200 rounded-[6px] flex items-center justify-center'>
+            <button onClick={handleEnterFullscreen}><FullScreenIcon /></button>
         </div>
     );
 };
