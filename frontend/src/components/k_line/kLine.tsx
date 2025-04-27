@@ -5,6 +5,11 @@ import * as echarts from 'echarts';
 import { useSearchParams } from "react-router-dom";
 import { useData } from '../../hooks/use_data';
 import { updateData, updateTime } from '../../lib/utils';
+import IntervalLoop from '@/src/lib/IntervalLoop';
+
+//svg
+import SpeedIcon from '../svg/speed';
+import { StartIcon, StopIcon } from '../svg/switch';
 
 // 定义K线图数据类型 - 每项包含: [日期, 开盘价, 最高价, 最低价, 收盘价, 成交量, 涨跌标志]
 type CandlestickDataItem = [string, number, number, number, number, number];
@@ -27,9 +32,12 @@ const CandlestickChart: React.FC = () => {
   const replayDatasRef = useRef<CandlestickDataItems>({});
   const countRef = useRef(0);
   const closeRef = useRef(0);
-  const lastMoveTime = useRef(0); // 用于控制鼠标移动频率
+  const isLoadData = useRef(false);
 
   const { getData } = useData();
+
+  const [switched, setSwitched] = useState(false); // 控制定时器的开关
+  const [loop, setLoop] = useState<IntervalLoop>(new IntervalLoop()); // 创建一个定时器实例
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -38,27 +46,41 @@ const CandlestickChart: React.FC = () => {
   const [history, setHistory] = useState([currency, timeRange]);
 
   const replay = (replayTime: number) => {
-    console.log(replayTime);
-    // 初始化回溯数据
-    replayDatasRef.current = {
-      '1d': allData['1d']?.slice(0, replayTime),
-      '4h': allData['4h']?.slice(0, replayTime * 6),
-      '1h': allData['1h']?.slice(0, replayTime * 24),
-      '15m': allData['15m']?.slice(0, replayTime * 96),
-      '5m': allData['5m']?.slice(0, replayTime * 288),
+    if (!isrePlay) { // 如果不是回放状态，则开始回放
+      // 初始化回溯数据
+      replayDatasRef.current = {
+        '1d': allData['1d']?.slice(0, replayTime),
+        '4h': allData['4h']?.slice(0, replayTime * 6),
+        '1h': allData['1h']?.slice(0, replayTime * 24),
+        '15m': allData['15m']?.slice(0, replayTime * 96),
+        '5m': allData['5m']?.slice(0, replayTime * 288),
+      }
+      refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+      countRef.current = replayTime * 288;
+      closeRef.current = allData['5m']?.[countRef.current - 1]?.[4] || 0;
+      setIsReplay(true);
     }
-    refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
-    countRef.current = replayTime * 288;
-    closeRef.current = allData['5m']?.[countRef.current - 1]?.[4] || 0;
-    setIsReplay(true);
   }
 
   const right = () => {
-    if (isrePlay) {
+    if (isrePlay && !isLoadData.current) {
+      isLoadData.current = true;
       if (!replayDatasRef.current || Object.keys(replayDatasRef.current).length === 0) {
         console.warn("replayDatasRef.current is empty, skipping right function");
+        isLoadData.current = false;
+        if (switched) {
+          loop.stop();
+        }
         return; // 如果 replayDatasRef.current 为空，则直接返回
       }
+      if (allData['5m'] && countRef.current >= allData['5m']?.length) {
+        console.warn("countRef.current exceeds data length, skipping right function");
+        if (switched) {
+          loop.stop();
+        }
+        return; // 如果 countRef.current 超过数据长度，则直接返回
+      }
+
       const m5Data = allData['5m']?.[countRef.current] as CandlestickDataItem;
 
       const m15Length = replayDatasRef.current['15m']?.length || 0;
@@ -99,18 +121,19 @@ const CandlestickChart: React.FC = () => {
 
       // 15m数据
       if (m15Length != 0 && m15Length * 3 === countRef.current) {
-        console.log('push 15m')
         replayDatasRef.current['15m']?.push(m5Data);
       } else if (m15Length != 0 && replayDatasRef.current['15m']) {
         replayDatasRef.current['15m'][m15Length - 1] = updateData([...m15Data], [...m5Data]);
       }
-
-      if (Object.keys(replayDatasRef.current).length != 0) {
-        refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
-        console.log('replay', timeRange)
-      }
       closeRef.current = m5Data[4];
       countRef.current++;
+
+      if (Object.keys(replayDatasRef.current).length != 0) {
+        console.log(timeRange)
+        refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+      }
+
+      isLoadData.current = false;
     }
   }
 
@@ -153,7 +176,7 @@ const CandlestickChart: React.FC = () => {
         dataset: {
           source: initData // 直接使用API返回的数据
         },
-        
+
         // 提示框配置 - 当鼠标悬停在数据点上时显示的信息
         tooltip: {
           trigger: 'axis',
@@ -254,11 +277,14 @@ const CandlestickChart: React.FC = () => {
             end: 20
           }
         ],
+        animationDuration: 300, // 默认1000ms，设为300ms
+        animationEasing: 'linear', // 使用线性动画
 
         // 系列配置 - 定义图表类型和数据映射
         series: [
           {
             type: 'candlestick',  // K线图类型
+            animationDurationUpdate: 150, // 数据更新动画时间
             itemStyle: {
               color: upColor,      // 上涨时的填充色
               color0: downColor,   // 下跌时的填充色
@@ -275,64 +301,7 @@ const CandlestickChart: React.FC = () => {
 
       // 设置配置项并渲染图表
       chartInstance.current.setOption(option);
-      // 鼠标移动显示 Y 值
-      chartInstance.current.getZr().on('mousemove', function (params) {
 
-        const now = Date.now();
-        if (now - lastMoveTime.current < 50) return; // 控制频率：每 50ms 一次
-        lastMoveTime.current = now;
-
-        const pointInPixel = [params.offsetX, params.offsetY];
-        const instance = chartInstance.current;
-
-        if (instance && instance.containPixel('grid', pointInPixel)) {
-          const pointInGrid = instance.convertFromPixel({ seriesIndex: 0 }, pointInPixel);
-          const yAxisValue = pointInGrid[1]; // 获取 Y 轴数值（价格）
-
-          // 计算涨跌
-          const priceChangePercent = ((yAxisValue - closeRef.current) / closeRef.current * 100).toFixed(2)+'%';
-          const changeColor = yAxisValue >= closeRef.current ? '#00da3c' : '#ec0000';
-
-          // 更新 graphic（价格标签）
-          instance.setOption({
-            graphic: [
-              {
-                id: 'price-label',
-                type: 'text',
-                right: 0,
-                top: params.offsetY - 25,
-                ignore: false, // 确保标签重新显示
-
-                style: {
-                  text: priceChangePercent,
-                  fill: changeColor,
-                  font: '12px sans-serif',
-                  backgroundColor: 'rgba(245, 240, 240, 0.7)',
-                  borderColor: '#333',
-                  borderWidth: 1,
-                  borderRadius: 4,
-                  padding: [4, 4],
-                },
-                z: 100
-              }
-            ]
-          });
-        }
-      });
-
-      // 鼠标移出时隐藏价格标签
-      chartInstance.current.getZr().on('mouseout', function () {
-        chartInstance.current?.setOption({
-          graphic: [{
-            id: 'price-label',
-            type: 'text',
-            ignore: true, // 隐藏标签
-            style: {
-              text: '',
-            }
-          }]
-        });
-      });
     } catch (e) {
       console.error('初始化图表失败:', e);
     } finally {
@@ -374,7 +343,7 @@ const CandlestickChart: React.FC = () => {
 
   useEffect(() => {
 
-  }, [isrePlay])
+  }, [isrePlay, switched])
 
   // 监听data数据变化，以便更新data数据并更新图表
   useEffect(() => {
@@ -383,7 +352,6 @@ const CandlestickChart: React.FC = () => {
 
   // 监听allData数据变化，以便更新allData数据
   useEffect(() => {
-    console.log(allData['1d']?.length)
   }, [allData])
 
   // 组件挂载时获取数据并初始化图表
@@ -391,7 +359,7 @@ const CandlestickChart: React.FC = () => {
     setSearchParams({
       currency: "BTC/USDT", timeRange: "1d"
     });
-    console.log('init', currency, timeRange)
+
     setIsLoading(true);
 
     init();
@@ -402,6 +370,12 @@ const CandlestickChart: React.FC = () => {
     // 组件卸载时清理事件监听器和图表实例
     return () => {
       console.log('清理事件监听器和图表实例');
+      loop.stop();
+      // 清理大数组引用
+      setAllData({});
+      setData([]);
+      replayDatasRef.current = {};
+
       window.removeEventListener('resize', handleResize);
       if (chartInstance.current) {
         chartInstance.current.dispose();
@@ -412,6 +386,8 @@ const CandlestickChart: React.FC = () => {
 
   useEffect(() => {
     if (history[0] !== currency) {
+      loop.stop();
+      setSwitched(false);
       setIsReplay(false);
       replayDatasRef.current = {};
       countRef.current = 0;
@@ -419,15 +395,21 @@ const CandlestickChart: React.FC = () => {
       setIsLoading(true);
 
       fetchData(currency);
-      console.log(history[0], '->', currency, timeRange)
       setHistory([currency, timeRange]);
     } else if (history[1] !== timeRange) {
       if (!isrePlay) {
         setData(allData?.[timeRange as keyof CandlestickDataItems] || []);
       } else {
+        if (switched) {
+          loop.stop();
+          setSwitched(false);
+          refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+          loop.start(right, 500);
+          setSwitched(true);
+        }
+
         refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
       }
-      console.log(currency, history[1], '->', timeRange)
       setHistory([currency, timeRange]);
     }
   }, [currency, timeRange])
@@ -444,33 +426,52 @@ const CandlestickChart: React.FC = () => {
 
       {/* 叠加在图表上的控制面板 */}
       {!isLoading &&
-        <div className="absolute top-2 right-[10%] flex items-center space-x-4">
-          <span>数据日期:{allData['1d']?.[0]?.[0]}~{allData['1d']?.[allData['1d']?.length - 1]?.[0]}</span>
-          <button
-            className="px-3 py-1.5 bg-white text-[#0056b3] border border-[#0056b3] rounded"
-            onClick={() => {
-              replay(200)
-            }}
-          >
-            切换时间
-          </button>
-
-          <div className="flex items-center">
-
+        <div className="absolute top-2 right-[10%] flex flex-row items-center justify-between">
+          <div>
+            <span>数据日期:{allData['1d']?.[0]?.[0]}~{allData['1d']?.[allData['1d']?.length - 1]?.[0]}</span>
             <button
-              className="ml-2 px-3 py-1.5 bg-[#4CAF50] text-white border border-[#2E7D32] rounded"
-
+              className="px-3 py-1.5 bg-white text-[#0056b3] border border-[#0056b3] rounded"
+              onClick={() => {
+                replay(200)
+              }}
             >
-              left
-            </button>
-
-            <button
-              className="ml-2 px-3 py-1.5 bg-[#F44336] text-white border border-[#C62828] rounded"
-              onClick={right}
-            >
-              right
+              {isrePlay ? 'K线回放' : 'K线模式'}
             </button>
           </div>
+
+          {isrePlay ?
+            <div className="flex items-center">
+              <button
+                className="ml-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-300 rounded-[6px]"
+                onClick={
+                  () => {
+                    if (isrePlay) {
+                      if (switched) {
+                        console.log('停止');
+                        loop.stop();
+                      } else {
+                        console.log('开始');
+                        loop.start(right, 500);
+                      }
+                      setSwitched(!switched);
+                    }
+                  }
+                }
+              >
+                {switched ? <StopIcon /> : <StartIcon />}
+              </button>
+              {switched ? < div className="ml-2 px-3 py-1.5"></div> :
+                <button
+                  disabled={switched}
+                  className="ml-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-300 rounded-[6px]"
+                  onClick={right}
+                >
+                  <SpeedIcon />
+                </button>
+              }
+            </div>
+            : <></>
+          }
         </div>}
 
     </div>
