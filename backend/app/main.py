@@ -1,7 +1,14 @@
 from api.router import app
-from flask_cors import CORS
+from fastapi.middleware.cors import CORSMiddleware
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    import uvicorn
+    uvicorn.run(app, host='127.0.0.1', port=5000)

@@ -1,11 +1,12 @@
 import asyncio
-from flask import Flask, request
+from fastapi import FastAPI, Query
 import os
 import json
+from typing import List, Optional
 
 from utils.getdata import fetch_ohlcv_data
 
-app = Flask(__name__)
+app = FastAPI()
 
 def path(symbol, time = None):
     # 获取 router.py 文件所在的目录
@@ -21,15 +22,15 @@ def path(symbol, time = None):
     data_file_path = os.path.abspath(data_file_path)
     return data_file_path
 
-@app.route('/data')
-async def get_ohlcv_data():
+@app.get('/data')
+async def get_ohlcv_data(
+    symbol: str = Query(default='BTCUSDT', description='交易对符号'),
+    timeframe: Optional[List[str]] = Query(default=['1d', '4h', '1h', '15m', '5m'], description='时间周期'),
+    days: int = Query(default=1000, description='获取天数')
+):
     new_timeframe = []
-
-    symbol = request.args.get('symbol','BTCUSDT').replace('/', '')
-    timeframe = request.args.getlist('timeframe')
-    if not timeframe:
-        timeframe = ['1d', '4h', '1h', '15m', '5m']
-    days = int(request.args.get('days', 1000))
+    symbol = symbol.replace('/', '')
+    print(symbol)
 
     try:
         # 确保目录存在
@@ -58,24 +59,24 @@ async def get_ohlcv_data():
                 data.update(result)
 
         return {
-            'name':symbol,
-            'data':data,
+            'name': symbol,
+            'data': data,
         }
     except FileNotFoundError as e:
         print(f"File not found: {e}")
         return {
-            'name':symbol,
-            'data':data
+            'name': symbol,
+            'data': data
         }
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {e}")
         return {
-            'name':symbol,
-            'data':data
+            'name': symbol,
+            'data': data
         }
     except Exception as e:
         print(f"An error occurred: {e}")
         return {
-            'name':symbol,
-            'data':data
+            'name': symbol,
+            'data': data
         }

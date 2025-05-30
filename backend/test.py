@@ -39,6 +39,4 @@ def extract_letters(time_str: str) -> str:
 for i,item in enumerate(ohlcv):
     ohlcv[i][0] = timestamp_to_time(item[0], extract_letters(limit1))
 
-# 将ohlcv数据写入文件
-with open('/home/wen/Projects/K-line-replay/backend/data/ohlcv_data.json', 'w') as f:
-    json.dump(ohlcv, f)
+print(len(ohlcv))

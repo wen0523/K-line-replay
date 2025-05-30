@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* globals.css */
+div[id="order-list"] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  div[id="order-list"]::-webkit-scrollbar {
+    display: none;
+  }
+  

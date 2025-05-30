@@ -3,3 +3,4 @@
 /backend/app/**/__pycache__/
 /backend/data/*
 /backend/test.py
+/task.md

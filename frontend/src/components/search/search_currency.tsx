@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
 
 //UI
-import { Listbox, ListboxItem, Divider } from "@heroui/react";
+import { Listbox, ListboxItem, Divider, Button } from "@heroui/react";
 
 //svg
 import SearchIcon from '../svg/search';
 import CloseIcon from '../svg/close';
+
+import { useSymbolStore } from '@/src/store/symbolStore';
 
 // 虚拟加密货币数据
 const cryptoData = [
@@ -31,8 +31,6 @@ interface Crypto {
 }
 
 const CryptoSearchModal = () => {
-    const [searchParams, setSearchParams] = useSearchParams();
-
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCrypto, setSelectedCrypto] = useState({ id: 'btc', name: 'Bitcoin', symbol: 'BTCUSDT' });
@@ -42,40 +40,60 @@ const CryptoSearchModal = () => {
         crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const setSymbol = useSymbolStore((state) => state.setSymbol);
+    const symbol = useSymbolStore((state) => state.symbol);
+
     const handleCryptoSelect = (crypto: Crypto) => {
-        setSelectedCrypto(crypto);
-        setSearchParams({ currency: crypto.symbol.replace('USDT','/USDT'), timeRange: searchParams.get("timeRange") || "1d" });
+        if (symbol != crypto.symbol.replace('USDT', '/USDT')){
+            setSelectedCrypto(crypto);
+            document.title = crypto.symbol
+            setSymbol(crypto.symbol.replace('USDT', '/USDT'));
+        }
+
         setIsOpen(false);
     };
 
+    useEffect(() => {
+        document.title = 'BTCUSDT'
+    }, [])
+
     return (
-        <div className='w-32 h-8 bg-gray-100 rounded-[6px] flex flex-row items-center hover:bg-gray-200'
-            onClick={() => { setIsOpen(true) }}>
-            <SearchIcon />
-            <button className='truncate pl-1'>{selectedCrypto.symbol}</button>
+        <> 
+            <Button
+                className='text-md'
+                size="sm"
+                onPress={() => { setIsOpen(true) }}
+            >
+                <SearchIcon />
+                <span>{selectedCrypto.symbol}</span>
+            </Button>
+
             {isOpen && (
-                // 遮罩层
                 <div
                     className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
                     onClick={(e) => {
-                        e.stopPropagation(); // 阻止点击事件冒泡到父组件
-                        setIsOpen(false);
+                        // 允许点击遮罩层关闭模态框，但阻止事件冒泡到可能存在的父级可点击元素
+                        if (e.target === e.currentTarget) {
+                           setIsOpen(false);
+                        }
+                        e.stopPropagation();
                     }}
                 >
                     {/* 弹出框 */}
                     <div
-                        className="bg-white rounded-lg w-3/5 h-3/4 flex flex-col"
-                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white dark:bg-gray-900 rounded-lg w-3/5 h-3/4 flex flex-col"
+                        onClick={(e) => e.stopPropagation()} // 阻止点击模态框内容区关闭模态框
                     >
 
-                        <div className='my-4 mx-6 flex items-center justify-between'>
+                        <div className='mb-4 mt-3 ml-6 flex items-center justify-between'>
                             <span className="text-xl font-bold">商品代码查询</span>
-                            <button
-                                className="size-8 rounded-md hover:bg-gray-300 flex items-center justify-center"
-                                onClick={() => setIsOpen(false)}
+                            <Button
+                                className="bg-transparent flex items-center justify-center" 
+                                size='sm'
+                                onPress={() => setIsOpen(false)}
                             >
                                 <CloseIcon />
-                            </button>
+                            </Button>
                         </div>
 
                         <Divider orientation="horizontal" className='my-1' />
@@ -87,7 +105,7 @@ const CryptoSearchModal = () => {
                                 placeholder="搜索"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className='ml-3 bordrer-none outline-none w-3/4'
+                                className='ml-3 bordrer-none outline-none w-3/4 bg-transparent dark:text-white dark:placeholder-gray-400'
                             />
                         </div>
 
@@ -95,34 +113,36 @@ const CryptoSearchModal = () => {
 
                         <div className="overflow-y-auto h-3/4">
                             <Listbox
-                                className='px-0'
-                            // virtualization={{
-                            //     maxListboxHeight: 40000,
-                            //     itemHeight: 60,
-                            // }}
+                                aria-label="选择加密货币"
+                                className='px-0 dark:text-white'
+                                virtualization={{
+                                    maxListboxHeight: 40000,
+                                    itemHeight: 60,
+                                }}
                             >
                                 {filteredCryptos.map((crypto) => (
                                     <ListboxItem key={crypto.id}
-                                        className='rounded-none py-3'
+                                        className='rounded-none py-3 dark:hover:bg-gray-800'
+                                        textValue={`${crypto.symbol} ${crypto.name}`}
+                                        onPress={() => handleCryptoSelect(crypto)} // 建议 ListboxItem 也使用 onPress
                                     >
-                                        <div className='mx-4 flex flex-row items-center'
-                                            onClick={() => handleCryptoSelect(crypto)}>
-                                            <div className="font-bold text-[16px] mr-16">{crypto.symbol}</div>
-                                            <div >{crypto.name}</div>
+                                        <div className='mx-4 flex flex-row items-center'>
+                                            <div className="font-bold text-[16px] mr-16 dark:text-white">{crypto.symbol}</div>
+                                            <div className="dark:text-gray-300">{crypto.name}</div>
                                         </div>
                                     </ListboxItem>
                                 ))}
                             </Listbox>
                         </div>
 
-                        <div className='bg-gray-100 flex grow items-center justify-center'>
-                            <span className='text-gray-700 text-sm'>只需在图表上开始输入，即可拉出此搜索框</span>
+                        <div className='bg-gray-100 dark:bg-gray-800 flex grow items-center justify-center'>
+                            <span className='text-gray-700 dark:text-gray-300 text-sm'>只需在图表上开始输入，即可拉出此搜索框</span>
                         </div>
                     </div>
-
-                </div>)}
-        </div>)
-
+                </div>
+            )}
+        </>
+    )
 };
 
 export default CryptoSearchModal;

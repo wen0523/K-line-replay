@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState, } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import { useSearchParams } from "react-router-dom";
 import { useData } from '../../hooks/use_data';
 import { updateData, updateTime } from '../../lib/utils';
 import IntervalLoop from '@/src/lib/IntervalLoop';
 
-//svg
+import { useSymbolStore } from '@/src/store/symbolStore';
+import { useTimeStore } from '@/src/store/timeStore';
+import { usePriceStore, useReplayStore, usePriceChangeStore, usePriceUpStore } from '@/src/store/priceStore';
+
+// SVG Icons
 import SpeedIcon from '../svg/speed';
 import { StartIcon, StopIcon } from '../svg/switch';
 
-// 定义K线图数据类型 - 每项包含: [日期, 开盘价, 最高价, 最低价, 收盘价, 成交量, 涨跌标志]
+// Define K-line chart data types
 type CandlestickDataItem = [string, number, number, number, number, number];
 type CandlestickDataItems = {
   '1d'?: CandlestickDataItem[],
@@ -22,32 +25,48 @@ type CandlestickDataItems = {
 }
 
 const CandlestickChart: React.FC = () => {
+  const symbol = useSymbolStore((state) => state.symbol);
+  const time = useTimeStore((state) => state.time);
+  const setPrice = usePriceStore((state) => state.setPrice);
+  const setReplay = useReplayStore((state) => state.setReplay);
+  const setPriceChange = usePriceChangeStore((state) => state.setPriceChange);
+  const setPriceUp = usePriceUpStore((state) => state.setPriceUp);
+
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // 初始状态设为true更合理
+  const [isLoading, setIsLoading] = useState(true);
 
   const [allData, setAllData] = useState<CandlestickDataItems>({});
   const [data, setData] = useState<CandlestickDataItem[]>([]);
-  const [isrePlay, setIsReplay] = useState(false);
+  const [isReplay, setIsReplay] = useState(false);
   const replayDatasRef = useRef<CandlestickDataItems>({});
   const countRef = useRef(0);
-  const closeRef = useRef(0);
   const isLoadData = useRef(false);
 
   const { getData } = useData();
 
-  const [switched, setSwitched] = useState(false); // 控制定时器的开关
-  const [loop, setLoop] = useState<IntervalLoop>(new IntervalLoop()); // 创建一个定时器实例
+  const [switched, setSwitched] = useState(false);
+  const [loop, setLoop] = useState<IntervalLoop>(new IntervalLoop());
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [history, setHistory] = useState(['BTC/USDT', '1d']);
 
-  const currency = searchParams.get("currency") || "BTC/USDT";
-  const timeRange = searchParams.get("timeRange") || "1d";
-  const [history, setHistory] = useState([currency, timeRange]);
+  // Theme colors for the chart
+  const THEME = {
+    upColor: '#26a69a',       // Green for up candles
+    upBorderColor: '#26a69a',
+    downColor: '#ef5350',     // Red for down candles
+    downBorderColor: '#ef5350',
+    crosshairColor: '#758696',
+    gridLineColor: '#131722',
+    tooltipBg: 'rgba(19, 23, 34, 0.85)',
+    tooltipBorder: '#363c4e',
+    tooltipTextColor: '#d1d4dc',
+    volumeColor: '#3a3e5e',
+  };
 
   const replay = (replayTime: number) => {
-    if (!isrePlay) { // 如果不是回放状态，则开始回放
-      // 初始化回溯数据
+    if (!isReplay) {
+      // Initialize replay data
       replayDatasRef.current = {
         '1d': allData['1d']?.slice(0, replayTime),
         '4h': allData['4h']?.slice(0, replayTime * 6),
@@ -55,33 +74,54 @@ const CandlestickChart: React.FC = () => {
         '15m': allData['15m']?.slice(0, replayTime * 96),
         '5m': allData['5m']?.slice(0, replayTime * 288),
       }
-      refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+      refresh(replayDatasRef.current[time as keyof CandlestickDataItems] || [])
+      // Set initial price
+      const priceData = replayDatasRef.current['5m']
+      const priceData1d = replayDatasRef.current['1d']
+
+      if (priceData && priceData1d) {
+        const data = priceData[priceData.length - 1]
+        const data1d = priceData1d[priceData1d.length - 1]
+
+        const price = Number(((data[1] + data[4]) / 2).toFixed(2));
+        const priceChange = Number(((data1d[4] - data1d[1]) / data1d[1] * 100).toFixed(2));
+
+        setPrice(price)
+        setPriceUp(data[4] >= data[1] ? true : false)
+        setPriceChange(priceChange)
+      }
+      setReplay(true);
       countRef.current = replayTime * 288;
-      closeRef.current = allData['5m']?.[countRef.current - 1]?.[4] || 0;
       setIsReplay(true);
     }
   }
 
   const right = () => {
-    if (isrePlay && !isLoadData.current) {
+    if (isReplay && !isLoadData.current) {
       isLoadData.current = true;
+
+      // Safety checks for data existence
       if (!replayDatasRef.current || Object.keys(replayDatasRef.current).length === 0) {
         console.warn("replayDatasRef.current is empty, skipping right function");
         isLoadData.current = false;
         if (switched) {
           loop.stop();
         }
-        return; // 如果 replayDatasRef.current 为空，则直接返回
+        return;
       }
+
       if (allData['5m'] && countRef.current >= allData['5m']?.length) {
         console.warn("countRef.current exceeds data length, skipping right function");
         if (switched) {
           loop.stop();
         }
-        return; // 如果 countRef.current 超过数据长度，则直接返回
+        return;
       }
 
       const m5Data = allData['5m']?.[countRef.current] as CandlestickDataItem;
+
+      setPrice(Number(((m5Data[1] + m5Data[4]) / 2).toFixed(2)));
+      setPriceUp(m5Data[4] >= m5Data[1] ? true : false)
 
       const m15Length = replayDatasRef.current['15m']?.length || 0;
       const m15Data = replayDatasRef.current['15m']?.[m15Length - 1] as CandlestickDataItem;
@@ -95,107 +135,108 @@ const CandlestickChart: React.FC = () => {
       const d1Length = replayDatasRef.current['1d']?.length || 0;
       const d1Data = replayDatasRef.current['1d']?.[d1Length - 1] as CandlestickDataItem;
 
-      //5m数据
+      // 5m data
       replayDatasRef.current['5m']?.push(m5Data);
 
-      // 1d数据
+      // Update data for all timeframes
+      // 1d data
       if (d1Length != 0 && d1Length * 288 === countRef.current) {
         replayDatasRef.current['1d']?.push(updateTime([...m5Data], 'd'));
       } else if (d1Length != 0 && replayDatasRef.current['1d']) {
         replayDatasRef.current['1d'][d1Length - 1] = updateData([...d1Data], [...m5Data]);
       }
 
-      // 4h数据
+      const data = replayDatasRef.current['1d']
+      if (data) {
+        const data1d = data[data.length - 1]
+        const priceChange = Number(((data1d[4] - data1d[1]) / data1d[1] * 100).toFixed(2));
+        setPriceChange(priceChange)
+      }
+
+      // 4h data
       if (h4Length != 0 && h4Length * 48 === countRef.current) {
         replayDatasRef.current['4h']?.push(updateTime([...m5Data], 'h'));
       } else if (h4Length != 0 && replayDatasRef.current['4h']) {
         replayDatasRef.current['4h'][h4Length - 1] = updateData([...h4Data], [...m5Data]);
       }
 
-      // 1h数据
+      // 1h data
       if (h1Length != 0 && h1Length * 12 === countRef.current) {
         replayDatasRef.current['1h']?.push(updateTime([...m5Data], 'h'));
       } else if (h1Length != 0 && replayDatasRef.current['1h']) {
         replayDatasRef.current['1h'][h1Length - 1] = updateData([...h1Data], [...m5Data]);
       }
 
-      // 15m数据
+      // 15m data
       if (m15Length != 0 && m15Length * 3 === countRef.current) {
         replayDatasRef.current['15m']?.push(m5Data);
       } else if (m15Length != 0 && replayDatasRef.current['15m']) {
         replayDatasRef.current['15m'][m15Length - 1] = updateData([...m15Data], [...m5Data]);
       }
-      closeRef.current = m5Data[4];
+
       countRef.current++;
 
       if (Object.keys(replayDatasRef.current).length != 0) {
-        console.log(timeRange)
-        refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+        refresh(replayDatasRef.current[time as keyof CandlestickDataItems] || [])
       }
 
       isLoadData.current = false;
     }
   }
 
-  // Resize
+  // Handle window resize
   const handleResize = () => {
     if (chartInstance.current) {
       chartInstance.current.resize();
     }
   };
 
-  // 初始化图表的函数，使用useCallback避免重复创建
+  // Initialize chart with data
   const initChart = async (initData: CandlestickDataItem[] | undefined) => {
     if (!chartRef.current) return;
 
     try {
-
-      // 如果已经有实例，先销毁它
+      // Dispose previous chart instance if exists
       if (chartInstance.current) {
         chartInstance.current.dispose();
       }
 
-      // 初始化ECharts实例
-      chartInstance.current = echarts.init(chartRef.current);
-
-      // 设置颜色方案
-      const upColor = '#00da3c';        // 上涨蜡烛颜色（绿色）
-      const upBorderColor = '#008f28';  // 上涨蜡烛边框颜色
-      const downColor = '#ec0000';      // 下跌蜡烛颜色（红色）
-      const downBorderColor = '#8a0000'; // 下跌蜡烛边框颜色
+      // Initialize ECharts instance
+      chartInstance.current = echarts.init(chartRef.current, 'dark');
 
       if (!initData || !Array.isArray(initData) || initData.length === 0) {
-        throw new Error('没有获取到数据');
+        throw new Error('No data received');
       }
 
-      const dataCount = initData.length;
-
-      // 配置ECharts选项
+      // Configure ECharts options
       const option: echarts.EChartsOption = {
-        // 数据集配置
+        backgroundColor: '#131722', // TradingView dark theme background
+
+        // Dataset configuration
         dataset: {
-          source: initData // 直接使用API返回的数据
+          source: initData
         },
 
-        // 提示框配置 - 当鼠标悬停在数据点上时显示的信息
+        // Tooltip configuration
         tooltip: {
           trigger: 'axis',
-          triggerOn: 'mousemove|click', // 减少触发频率
-          backgroundColor: 'rgba(245, 240, 240, 0.7)',
-          borderColor: '#333',
+          triggerOn: 'mousemove|click',
+          backgroundColor: THEME.tooltipBg,
+          borderColor: THEME.tooltipBorder,
           borderWidth: 1,
           textStyle: {
-            color: 'black',
-            fontFamily: 'Arial, sans-serif',
+            color: THEME.tooltipTextColor,
+            fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
             fontSize: 12
           },
-          padding: 10,
+          padding: [8, 12],
+          extraCssText: 'box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); border-radius: 4px;',
           axisPointer: {
-            type: 'cross',  // 改为'cross'类型，显示十字准线
-            lineStyle: {    // 可以设置线条样式
-              color: '#555',
+            type: 'cross',
+            lineStyle: {
+              color: THEME.crosshairColor,
               width: 1,
-              type: 'dashed'  // 使用虚线
+              type: 'dashed'
             },
           },
           formatter: (params) => {
@@ -203,136 +244,206 @@ const CandlestickChart: React.FC = () => {
               const data = params[0].data as CandlestickDataItem;
               const [date, open, high, low, close, volume] = data;
 
-              // 计算涨跌幅
+              // Calculate price change percentage
               const priceChangePercent = Number(((close - open) / open * 100).toFixed(2));
-              const changeColor = close >= open ? '#00da3c' : '#ec0000';
+              const changeColor = close >= open ? THEME.upColor : THEME.downColor;
+              const amplitude = Math.abs(Number((((high - low) / low * 100).toFixed(2))));
 
               return `
-              <div>
-                <strong>${date}</strong><br/>
-                开盘价: ${open}<br/>
-                最高价: ${high}<br/>
-                最低价: ${low}<br/>
-                收盘价: ${close}<br/>
-                <span style="color:${changeColor}">涨跌: ${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%</span><br/>
-                振幅: ${Math.abs(Number((((high - low) / low * 100).toFixed(2))))}%<br/>
-                成交量: ${volume}<br/>
+              <div style="font-family: Inter, system-ui, sans-serif; line-height: 1.5;">
+                <div style="font-weight: 600; margin-bottom: 4px;">${date}</div>
+                <div style="display: grid; grid-template-columns: auto auto; gap: 4px 12px;">
+                  <span style="color: #a3a6af;">Open:</span><span>${open.toFixed(2)}</span>
+                  <span style="color: #a3a6af;">High:</span><span>${high.toFixed(2)}</span>
+                  <span style="color: #a3a6af;">Low:</span><span>${low.toFixed(2)}</span>
+                  <span style="color: #a3a6af;">Close:</span><span>${close.toFixed(2)}</span>
+                  <span style="color: #a3a6af;">Change:</span><span style="color:${changeColor}">${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%</span>
+                  <span style="color: #a3a6af;">Amplitude:</span><span>${amplitude}%</span>
+                  <span style="color: #a3a6af;">Volume:</span><span>${volume.toLocaleString()}</span>
+                </div>
               </div>
             `;
             } else {
-              return `
-              <div>
-                <strong>数据获取失败</strong><br/>
-              </div>
-              `
+              return `<div>Data not available</div>`;
             }
           }
         },
 
-        // 网格配置 - 定义图表的布局
+        // Grid configuration
         grid: [
           {
-            left: '5%',      // 主图表区域
-            right: '3%',
-            bottom: 100
+            left: '2%',
+            right: '6%',
+            top: '8%',
+            bottom: 100,
+            borderColor: 'rgba(58, 62, 94, 0.3)',
+            show: true
           },
         ],
 
-        // X轴配置 - K线图
+        // X-axis configuration
         xAxis: [
           {
-            type: 'category',   // 类目轴，适用于离散数据
-            boundaryGap: false, // 两边留白策略
-            axisLine: { onZero: false },
-            splitLine: { show: false },
-            min: 'dataMin',     // 起始值为数据最小值
-            max: 'dataMax'      // 结束值为数据最大值
+            type: 'category',
+            boundaryGap: false,
+            axisLine: {
+              onZero: false,
+              lineStyle: {
+                color: '#363c4e'
+              }
+            },
+            splitLine: {
+              show: false
+            },
+            axisLabel: {
+              color: '#758696',
+              fontSize: 11,
+              // formatter: (value: string) => {
+              //   // Format date for better readability
+              //   const date = new Date(value);
+              //   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              // }
+            },
+            axisPointer: {
+              label: {
+                show: false
+              }
+            },
+            min: 'dataMin',
+            max: 'dataMax'
           },
         ],
 
-        // Y轴配置 - 同样有两个y轴
+        // Y-axis configuration
         yAxis: [
           {
-            scale: true,        // 不强制从零开始，根据数据自动调整
-            splitArea: {
-              show: true        // 显示分隔区域
+            scale: true,
+            position: 'right',
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: 'rgba(58, 62, 94, 0.3)',
+                type: 'dashed'
+              }
+            },
+            axisLabel: {
+              color: '#758696',
+              fontSize: 11,
+              formatter: (value: number) => {
+                return value.toFixed(2);
+              }
+            },
+            axisLine: {
+              show: false
             }
           },
         ],
 
-        // 区域缩放组件配置
+        // Zoom control configuration
         dataZoom: [
           {
-            type: 'inside',     // 内置型数据区域缩放组件（鼠标滚轮缩放）
-            xAxisIndex: [0],    // 控制x轴
-            start: 0,          // 数据窗口范围的起始百分比
-            end: 20            // 数据窗口范围的结束百分比
+            type: 'inside',
+            xAxisIndex: [0],
+            start: 50,
+            end: 100,
+            minValueSpan: 10
           },
           {
             show: true,
             xAxisIndex: [0],
-            type: 'slider',     // 滑动条型数据区域缩放组件
+            type: 'slider',
             bottom: 10,
-            start: 0,
-            end: 20
+            height: 40,
+            borderColor: '#3a3e5e',
+            fillerColor: 'rgba(58, 62, 94, 0.15)',
+            handleStyle: {
+              color: '#758696',
+              borderColor: '#758696'
+            },
+            // labelFormatter: (value: number, valueStr: string) => {
+            //   const date = new Date(valueStr);
+            //   // 格式化日期，添加时分显示
+            //   return new Intl.DateTimeFormat('zh-CN', {
+            //     year: 'numeric',
+            //     month: '2-digit',
+            //     day: '2-digit',
+            //     hour: '2-digit',
+            //     minute: '2-digit'
+            //   }).format(date);
+            // },
+            textStyle: {
+              color: '#758696'
+            },
+            start: 50,
+            end: 100
           }
         ],
-        animationDuration: 300, // 默认1000ms，设为300ms
-        animationEasing: 'linear', // 使用线性动画
 
-        // 系列配置 - 定义图表类型和数据映射
+        animation: true,
+        animationDuration: 300,
+        animationEasing: 'linear',
+
+        // Series configuration
         series: [
           {
-            type: 'candlestick',  // K线图类型
-            animationDurationUpdate: 150, // 数据更新动画时间
+            name: 'Candlestick',
+            type: 'candlestick',
+            animationDurationUpdate: 150,
             itemStyle: {
-              color: upColor,      // 上涨时的填充色
-              color0: downColor,   // 下跌时的填充色
-              borderColor: upBorderColor,    // 上涨时的边框色
-              borderColor0: downBorderColor  // 下跌时的边框色
+              color: THEME.upColor,
+              color0: THEME.downColor,
+              borderColor: THEME.upBorderColor,
+              borderColor0: THEME.downBorderColor,
+              borderWidth: 1
             },
             encode: {
-              x: 0,                // x轴映射data中的第1个值（日期）
-              y: [1, 4, 3, 2]      // y轴映射data中的[开盘价, 收盘价, 最低价, 最高价]
+              x: 0,
+              y: [1, 4, 3, 2]
             }
           },
         ]
       };
 
-      // 设置配置项并渲染图表
+      // Set options and render chart
       chartInstance.current.setOption(option);
 
     } catch (e) {
-      console.error('初始化图表失败:', e);
+      console.error('Failed to initialize chart:', e);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 获取数据
+
+
+  // Fetch data from API
   const fetchData = async (coin: string, init = false) => {
-    const response = await getData(coin);
-    setAllData(response);
-    closeRef.current = response['5m']?.[response['5m']?.length - 1]?.[4] || 0;
-    if (init) {
-      // init
-      return response[timeRange]
-    } else {
-      setData(response[timeRange] || []);
+    try {
+      const response = await getData(coin);
+      setAllData(response);
+
+      if (init) {
+        return response[time];
+      } else {
+        setData(response[time] || []);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
       setIsLoading(false);
+      return [];
     }
   }
 
-  // 防止在数据返回之前图表先初始化
+  // Initialize chart with data
   const init = async () => {
-    const initData = await fetchData(currency, true);
+    const initData = await fetchData(symbol, true);
     initChart(initData);
   };
 
-
+  // Refresh chart with new data
   const refresh = (theData: CandlestickDataItem[]) => {
-    if (chartInstance.current) {
-      // 刷新图表数据
+    if (chartInstance.current && theData.length > 0) {
       chartInstance.current.setOption({
         dataset: {
           source: theData
@@ -342,36 +453,30 @@ const CandlestickChart: React.FC = () => {
   };
 
   useEffect(() => {
+    if (chartInstance.current) {
+      chartInstance.current.resize();
+    }
+  }, [isReplay]); // 监听 isReplay 状态
 
-  }, [isrePlay, switched])
-
-  // 监听data数据变化，以便更新data数据并更新图表
+  // Watch for data changes and update chart
   useEffect(() => {
-    refresh(data)
-  }, [data])
+    refresh(data);
+  }, [data]);
 
-  // 监听allData数据变化，以便更新allData数据
+  // Setup and cleanup
   useEffect(() => {
-  }, [allData])
-
-  // 组件挂载时获取数据并初始化图表
-  useEffect(() => {
-    setSearchParams({
-      currency: "BTC/USDT", timeRange: "1d"
-    });
-
     setIsLoading(true);
-
     init();
 
-    // 添加窗口大小变化的监听器
+    // Add window resize listener
     window.addEventListener('resize', handleResize);
 
-    // 组件卸载时清理事件监听器和图表实例
+    // Cleanup on unmount
     return () => {
-      console.log('清理事件监听器和图表实例');
+      console.log('Cleaning up chart resources');
       loop.stop();
-      // 清理大数组引用
+
+      // Clear large array references
       setAllData({});
       setData([]);
       replayDatasRef.current = {};
@@ -384,96 +489,165 @@ const CandlestickChart: React.FC = () => {
     };
   }, []);
 
+  // Handle symbol and time changes
   useEffect(() => {
-    if (history[0] !== currency) {
+    if (history[0] !== symbol) {
+      // Symbol changed, reset everything
       loop.stop();
       setSwitched(false);
       setIsReplay(false);
       replayDatasRef.current = {};
       countRef.current = 0;
-      closeRef.current = 0;
       setIsLoading(true);
+      setReplay(false);
+      setPrice(-1)
+      setPriceUp(true)
+      setPriceChange(0)
 
-      fetchData(currency);
-      setHistory([currency, timeRange]);
-    } else if (history[1] !== timeRange) {
-      if (!isrePlay) {
-        setData(allData?.[timeRange as keyof CandlestickDataItems] || []);
+      fetchData(symbol);
+      setHistory([symbol, time]);
+    } else if (history[1] !== time) {
+      // Only time frame changed
+      if (!isReplay) {
+        setData(allData?.[time as keyof CandlestickDataItems] || []);
       } else {
         if (switched) {
           loop.stop();
           setSwitched(false);
-          refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+          refresh(replayDatasRef.current[time as keyof CandlestickDataItems] || []);
           loop.start(right, 500);
           setSwitched(true);
         }
 
-        refresh(replayDatasRef.current[timeRange as keyof CandlestickDataItems] || [])
+        refresh(replayDatasRef.current[time as keyof CandlestickDataItems] || []);
       }
-      setHistory([currency, timeRange]);
+      setHistory([symbol, time]);
     }
-  }, [currency, timeRange])
+  }, [symbol, time]);
+
+  // Generates skeleton blocks for the loading state
+  const renderSkeleton = () => (
+    <div className="animate-pulse h-full w-full flex flex-col">
+      {/* Chart area skeleton */}
+      <div className="flex-1 bg-gray-800 w-full">
+        <div className="h-full w-full flex flex-col">
+          {/* Price indicators */}
+          <div className="flex justify-between px-6 py-4">
+            <div className="w-20 h-6 bg-gray-700 rounded"></div>
+            <div className="w-24 h-6 bg-gray-700 rounded"></div>
+            <div className="w-20 h-6 bg-gray-700 rounded"></div>
+          </div>
+
+          {/* Chart grid lines */}
+          <div className="flex-1 px-6 py-4 grid grid-rows-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-full h-0.5 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+
+          {/* Time indicators */}
+          <div className="flex justify-between px-6 py-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="w-14 h-4 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom slider skeleton */}
+      <div className="h-12 bg-gray-800 w-full px-6 py-2">
+        <div className="w-full h-full bg-gray-700 rounded"></div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="relative w-full rounded-[6px] h-full bg-white">
+    <div className="relative rounded-lg h-full bg-[#131722] shadow-lg overflow-hidden">
+
+
+      {isLoading && (
+        renderSkeleton()
+      )}
+      {/* Chart container */}
       <div
         ref={chartRef}
         className="w-full h-full"
-        aria-label="K线图"
-      >
-        {/* {isLoading && (<div className=''></div>)} */}
-      </div>
+        aria-label="K-line Chart"
+      />
 
-      {/* 叠加在图表上的控制面板 */}
-      {!isLoading &&
-        <div className="absolute top-2 right-[10%] flex flex-row items-center justify-between">
-          <div>
-            <span>数据日期:{allData['1d']?.[0]?.[0]}~{allData['1d']?.[allData['1d']?.length - 1]?.[0]}</span>
-            <button
-              className="px-3 py-1.5 bg-white text-[#0056b3] border border-[#0056b3] rounded"
-              onClick={() => {
-                replay(200)
-              }}
-            >
-              {isrePlay ? 'K线回放' : 'K线模式'}
-            </button>
+      {/* Control panel */}
+      {!isLoading && (
+        <div className="absolute top-3 right-3 flex flex-row items-center gap-3 z-10">
+          <div className="bg-[#1e222d] py-2 px-3 rounded-md shadow-sm text-sm">
+            <span className="text-gray-300">
+              {allData['1d']?.[0]?.[0]} - {allData['1d']?.[allData['1d']?.length - 1]?.[0]}
+            </span>
           </div>
 
-          {isrePlay ?
-            <div className="flex items-center">
-              <button
-                className="ml-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-300 rounded-[6px]"
-                onClick={
-                  () => {
-                    if (isrePlay) {
-                      if (switched) {
-                        console.log('停止');
-                        loop.stop();
-                      } else {
-                        console.log('开始');
-                        loop.start(right, 500);
-                      }
-                      setSwitched(!switched);
-                    }
-                  }
+          <button
+            className={`px-3 py-2 rounded-md text-sm font-medium shadow-sm transition-colors ${isReplay
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-[#2962ff] text-white hover:bg-blue-700'
+              }`}
+            onClick={() => {
+              if (!isReplay) {
+                console.log('Entering replay mode');
+                replay(500);
+              } else {
+                console.log('Exiting replay mode');
+                setIsReplay(!isReplay);
+                if (switched) {
+                  loop.stop();
+                  setSwitched(false);
                 }
+                setPrice(-1)
+                setPriceUp(true)
+                setPriceChange(0)
+                setReplay(false)
+                refresh(allData[time as keyof CandlestickDataItems] || []);
+              }
+            }}
+          >
+            {isReplay ? 'Exit Replay' : 'Start Replay'}
+          </button>
+
+          {isReplay && (
+            <div className="flex items-center gap-2">
+              <button
+                className={`p-2 rounded-md shadow-sm transition-colors ${switched
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-green-500 text-white hover:bg-green-600'
+                  }`}
+                onClick={() => {
+                  if (isReplay) {
+                    if (switched) {
+                      console.log('Stopping replay');
+                      loop.stop();
+                    } else {
+                      console.log('Starting replay');
+                      loop.start(right, 500);
+                    }
+                    setSwitched(!switched);
+                  }
+                }}
               >
                 {switched ? <StopIcon /> : <StartIcon />}
               </button>
-              {switched ? < div className="ml-2 px-3 py-1.5"></div> :
+
+              {!switched && (
                 <button
                   disabled={switched}
-                  className="ml-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-300 rounded-[6px]"
+                  className="p-2 bg-[#2962ff] text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors"
                   onClick={right}
+                  title="Move one step forward"
                 >
                   <SpeedIcon />
                 </button>
-              }
+              )}
             </div>
-            : <></>
-          }
-        </div>}
-
+          )}
+        </div>
+      )}
     </div>
   );
 };
