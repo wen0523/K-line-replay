@@ -1,0 +1,56 @@
+# 使用官方 Node.js 运行时作为父镜像
+FROM node:20-alpine AS base
+
+# 安装依赖阶段
+FROM base AS deps
+# 检查 https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine
+# 了解为什么可能需要 libc6-compat
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# 安装依赖基于首选的包管理器
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+# 启用 pnpm 并安装依赖
+RUN corepack enable pnpm && pnpm install
+
+# 构建阶段
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY frontend/ .
+
+# 设置环境变量
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# 构建应用
+RUN corepack enable pnpm && pnpm run build
+
+# 生产镜像，复制所有文件并运行 Next.js
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# 设置正确的权限并利用输出跟踪来减少镜像大小
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+# 设置健康检查
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+CMD ["node", "server.js"]

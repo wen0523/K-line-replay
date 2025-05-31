@@ -2,7 +2,7 @@ import re
 import ccxt.async_support as ccxt
 import json
 import os
-from utils.parsetime import getStartTime, parseTime, timestamp_to_time, parseTimeH
+from .parsetime import getStartTime, parseTime, timestamp_to_time, parseTimeH
 
 def extract_letters(time_str: str) -> str:
     match = re.search(r'[a-zA-Z]+', time_str)
