@@ -1,0 +1,2 @@
+# This file ensures the public directory is tracked by git
+# The public directory is required by Next.js for static assets

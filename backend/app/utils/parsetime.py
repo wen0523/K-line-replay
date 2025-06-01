@@ -58,7 +58,8 @@ def getStartTime(days:int):
     time = datetime.now()
     timestamp_ms = int((time.timestamp() - 24*60*60) * 1000)
 
-    date_obj = datetime.strptime(f'{timestamp_to_time(timestamp_ms, 'd')} 00:00:00', '%Y-%m-%d %H:%M:%S')
+    date_str = timestamp_to_time(timestamp_ms, 'd')
+    date_obj = datetime.strptime(f'{date_str} 00:00:00', '%Y-%m-%d %H:%M:%S')
 
     # 直接设置为 UTC 时间
     utc_date = date_obj.replace(tzinfo=timezone.utc)
