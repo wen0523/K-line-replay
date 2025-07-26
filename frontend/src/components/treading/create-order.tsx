@@ -2,10 +2,10 @@
 
 import { v4 as uuidv4 } from 'uuid'
 
-import { useSymbolStore } from "@/src/store/symbolStore"
-import { usePriceStore, usePriceUpStore, usePriceChangeStore } from "@/src/store/priceStore"
-import { useOrderStore } from "@/src/store/orderStore"
-import { useAssetsStore } from '@/src/store/assetsStore'
+import { useSymbolStore } from "@/store/symbolStore"
+import { usePriceStore, usePriceUpStore, usePriceChangeStore } from "@/store/priceStore"
+import { useOrderStore } from "@/store/orderStore"
+import { useAssetsStore } from '@/store/assetsStore'
 import { ToastProvider, addToast, Divider, Tabs, Tab, Card, CardBody, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, Slider, Input, Checkbox, CardHeader } from "@heroui/react"
 import { useState } from "react"
 

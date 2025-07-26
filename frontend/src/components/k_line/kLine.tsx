@@ -4,11 +4,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { useData } from '../../hooks/use_data';
 import { updateData, updateTime } from '../../lib/utils';
-import IntervalLoop from '@/src/lib/IntervalLoop';
+import IntervalLoop from '@/lib/IntervalLoop';
 
-import { useSymbolStore } from '@/src/store/symbolStore';
-import { useTimeStore } from '@/src/store/timeStore';
-import { usePriceStore, useReplayStore, usePriceChangeStore, usePriceUpStore } from '@/src/store/priceStore';
+import { useSymbolStore } from '@/store/symbolStore';
+import { useTimeStore } from '@/store/timeStore';
+import { usePriceStore, useReplayStore, usePriceChangeStore, usePriceUpStore } from '@/store/priceStore';
 
 // SVG Icons
 import SpeedIcon from '../svg/speed';

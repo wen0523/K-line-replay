@@ -6,9 +6,9 @@ import {
 
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 
-import { useOrderStore } from "@/src/store/orderStore";
-import { usePriceStore } from "@/src/store/priceStore";
-import { useAssetsStore } from "@/src/store/assetsStore";
+import { useOrderStore } from "@/store/orderStore";
+import { usePriceStore } from "@/store/priceStore";
+import { useAssetsStore } from "@/store/assetsStore";
 
 import React from "react";
 

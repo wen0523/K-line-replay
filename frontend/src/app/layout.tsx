@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "../components/heroui/providers";
-import { useThemeStore } from "@/src/store/themeStore";
+import { useThemeStore } from "@/store/themeStore";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",

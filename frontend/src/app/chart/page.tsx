@@ -1,16 +1,16 @@
 'use client'
 
 //UI
-import PartialFullscreenComponent from '@/src/components/screen/full_screen';
+import PartialFullscreenComponent from '@/components/screen/full_screen';
 import { Divider } from "@heroui/react";
-import CryptoSearchModal from '@/src/components/search/search_currency';
-import SelectTime from '@/src/components/heroui/select_time';
-import CandlestickChart from "@/src/components/k_line/kLine";
-import CreateOrder from '@/src/components/treading/create-order';
-import OrderList from '@/src/components/treading/order-list';
-import ThemeSwitch from '@/src/components/heroui/theme-switch';
+import CryptoSearchModal from '@/components/search/search_currency';
+import SelectTime from '@/components/heroui/select_time';
+import CandlestickChart from "@/components/k_line/kLine";
+import CreateOrder from '@/components/treading/create-order';
+import OrderList from '@/components/treading/order-list';
+import ThemeSwitch from '@/components/heroui/theme-switch';
 
-import { useReplayStore } from '@/src/store/priceStore';
+import { useReplayStore } from '@/store/priceStore';
 
 export default function ChartPage() {
   const replay = useReplayStore(state => state.replay)

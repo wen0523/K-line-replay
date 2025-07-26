@@ -7,7 +7,7 @@ import { Listbox, ListboxItem, Divider, Button } from "@heroui/react";
 import SearchIcon from '../svg/search';
 import CloseIcon from '../svg/close';
 
-import { useSymbolStore } from '@/src/store/symbolStore';
+import { useSymbolStore } from '@/store/symbolStore';
 
 // 虚拟加密货币数据
 const cryptoData = [

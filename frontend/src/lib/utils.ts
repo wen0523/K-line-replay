@@ -1,6 +1,7 @@
 // update the data in big frame
+import { KLineData } from '@/types';
 
-export const updateData = (data1: any, data2: any) => {
+export const updateData = (data1: KLineData, data2: KLineData): KLineData => {
     data1[2] = (data1[2] > data2[2]) ? data1[2] : data2[2];
     data1[3] = (data1[3] < data2[3]) ? data1[3] : data2[3];
     data1[4] = data2[4];
@@ -9,7 +10,7 @@ export const updateData = (data1: any, data2: any) => {
     return data1;
 }
 
-export const updateTime = (data: any, time: string) => {
+export const updateTime = (data: KLineData, time: string): KLineData => {
     if (time === 'h') {
         const theTime = data[0]
         data[0] = theTime.split('-').splice(0, 4).join('-');

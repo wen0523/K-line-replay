@@ -1,7 +1,7 @@
 import { Switch } from "@heroui/react";
 import React from "react";
 
-import { useThemeStore } from "@/src/store/themeStore";
+import { useThemeStore } from "@/store/themeStore";
 
 export const MoonIcon = (props: React.SVGProps<SVGSVGElement>) => {
     return (

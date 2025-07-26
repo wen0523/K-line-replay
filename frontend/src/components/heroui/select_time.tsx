@@ -1,6 +1,6 @@
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@heroui/react";
 import { useState } from "react";
-import { useTimeStore } from "@/src/store/timeStore";
+import { useTimeStore } from "@/store/timeStore";
 
 const SelectTime = () => {
   const [content, setContent] = useState('1D')
