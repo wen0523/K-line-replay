@@ -4,7 +4,7 @@ import os
 import json
 from typing import List, Optional
 
-from ..utils.getdata import fetch_ohlcv_data
+from utils.getdata import fetch_ohlcv_data
 
 app = FastAPI()
 
