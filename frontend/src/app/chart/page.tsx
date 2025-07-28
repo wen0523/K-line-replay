@@ -6,8 +6,8 @@ import { Divider } from "@heroui/react";
 import CryptoSearchModal from '@/components/search/search_currency';
 import SelectTime from '@/components/heroui/select_time';
 import CandlestickChart from "@/components/k_line/kLine";
-import CreateOrder from '@/components/treading/create-order';
-import OrderList from '@/components/treading/order-list';
+import CreateOrder from '@/components/trading/create-order';
+import OrderList from '@/components/trading/order-list';
 import ThemeSwitch from '@/components/heroui/theme-switch';
 
 import { useReplayStore } from '@/store/priceStore';
