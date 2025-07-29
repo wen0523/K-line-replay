@@ -158,7 +158,7 @@ const CandlestickChart: React.FC = () => {
       {/* 图表容器 */}
       <div
         ref={chartRef}
-        className="w-full h-full"
+        className="w-full h-full chart-container will-change-theme"
         aria-label="K-line Chart"
       />
 

@@ -1,23 +1,46 @@
 import * as echarts from 'echarts';
+import { useThemeStore } from '@/store/themeStore';
 
 import type { KLineData } from '@/types';
 
-// Theme colors for the chart
-export const CHART_THEME = {
+// Light theme colors
+export const LIGHT_CHART_THEME = {
+  upColor: '#16a34a',       // Green for up candles
+  upBorderColor: '#16a34a',
+  downColor: '#dc2626',     // Red for down candles
+  downBorderColor: '#dc2626',
+  crosshairColor: '#6b7280',
+  gridLineColor: '#e5e7eb',
+  tooltipBg: 'rgba(255, 255, 255, 0.95)',
+  tooltipBorder: '#d1d5db',
+  tooltipTextColor: '#374151',
+  volumeColor: '#9ca3af',
+  backgroundColor: '#ffffff',
+  axisLabelColor: '#6b7280',
+  splitLineColor: '#f3f4f6'
+};
+
+// Dark theme colors
+export const DARK_CHART_THEME = {
   upColor: '#26a69a',       // Green for up candles
   upBorderColor: '#26a69a',
   downColor: '#ef5350',     // Red for down candles
   downBorderColor: '#ef5350',
   crosshairColor: '#758696',
   gridLineColor: '#131722',
-  tooltipBg: 'rgba(19, 23, 34, 0.85)',
+  tooltipBg: 'rgba(19, 23, 34, 0.95)',
   tooltipBorder: '#363c4e',
   tooltipTextColor: '#d1d4dc',
   volumeColor: '#3a3e5e',
-  backgroundColor: '#131722'
+  backgroundColor: '#131722',
+  axisLabelColor: '#758696',
+  splitLineColor: 'rgba(58, 62, 94, 0.3)'
 };
 
 export const useChartConfig = () => {
+  const theme = useThemeStore((state) => state.theme);
+  const CHART_THEME = theme === 'dark' ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+
   const getChartOption = (data: KLineData[]): echarts.EChartsOption => {
     return {
       backgroundColor: CHART_THEME.backgroundColor,
@@ -39,8 +62,8 @@ export const useChartConfig = () => {
           fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
           fontSize: 12
         },
-        padding: [8, 12],
-        extraCssText: 'box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); border-radius: 4px;',
+        padding: [12, 16],
+        extraCssText: 'box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); border-radius: 8px; backdrop-filter: blur(10px);',
         axisPointer: {
           type: 'cross',
           lineStyle: {
@@ -60,16 +83,16 @@ export const useChartConfig = () => {
             const amplitude = Math.abs(Number((((high - low) / low * 100).toFixed(2))));
 
             return `
-              <div style="font-family: Inter, system-ui, sans-serif; line-height: 1.5;">
-                <div style="font-weight: 600; margin-bottom: 4px;">${date}</div>
-                <div style="display: grid; grid-template-columns: auto auto; gap: 4px 12px;">
-                  <span style="color: #a3a6af;">Open:</span><span>${open.toFixed(2)}</span>
-                  <span style="color: #a3a6af;">High:</span><span>${high.toFixed(2)}</span>
-                  <span style="color: #a3a6af;">Low:</span><span>${low.toFixed(2)}</span>
-                  <span style="color: #a3a6af;">Close:</span><span>${close.toFixed(2)}</span>
-                  <span style="color: #a3a6af;">Change:</span><span style="color:${changeColor}">${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%</span>
-                  <span style="color: #a3a6af;">Amplitude:</span><span>${amplitude}%</span>
-                  <span style="color: #a3a6af;">Volume:</span><span>${volume.toLocaleString()}</span>
+              <div style="font-family: Inter, system-ui, sans-serif; line-height: 1.6;">
+                <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">${date}</div>
+                <div style="display: grid; grid-template-columns: auto auto; gap: 6px 16px; font-size: 12px;">
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Open:</span><span style="font-weight: 500;">${open.toFixed(2)}</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">High:</span><span style="font-weight: 500;">${high.toFixed(2)}</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Low:</span><span style="font-weight: 500;">${low.toFixed(2)}</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Close:</span><span style="font-weight: 500;">${close.toFixed(2)}</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Change:</span><span style="color:${changeColor}; font-weight: 600;">${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Amplitude:</span><span style="font-weight: 500;">${amplitude}%</span>
+                  <span style="color: ${CHART_THEME.tooltipTextColor}; opacity: 0.7;">Volume:</span><span style="font-weight: 500;">${volume.toLocaleString()}</span>
                 </div>
               </div>
             `;
@@ -86,7 +109,7 @@ export const useChartConfig = () => {
           right: '6%',
           top: '8%',
           bottom: 100,
-          borderColor: 'rgba(58, 62, 94, 0.3)',
+          borderColor: CHART_THEME.splitLineColor,
           show: true
         },
       ],
@@ -99,14 +122,14 @@ export const useChartConfig = () => {
           axisLine: {
             onZero: false,
             lineStyle: {
-              color: '#363c4e'
+              color: CHART_THEME.splitLineColor
             }
           },
           splitLine: {
             show: false
           },
           axisLabel: {
-            color: '#758696',
+            color: CHART_THEME.axisLabelColor,
             fontSize: 11,
           },
           axisPointer: {
@@ -127,12 +150,12 @@ export const useChartConfig = () => {
           splitLine: {
             show: true,
             lineStyle: {
-              color: 'rgba(58, 62, 94, 0.3)',
+              color: CHART_THEME.splitLineColor,
               type: 'dashed'
             }
           },
           axisLabel: {
-            color: '#758696',
+            color: CHART_THEME.axisLabelColor,
             fontSize: 11,
             formatter: (value: number) => {
               return value.toFixed(2);
@@ -159,14 +182,14 @@ export const useChartConfig = () => {
           type: 'slider',
           bottom: 10,
           height: 40,
-          borderColor: '#3a3e5e',
-          fillerColor: 'rgba(58, 62, 94, 0.15)',
+          borderColor: CHART_THEME.splitLineColor,
+          fillerColor: theme === 'dark' ? 'rgba(58, 62, 94, 0.15)' : 'rgba(156, 163, 175, 0.15)',
           handleStyle: {
-            color: '#758696',
-            borderColor: '#758696'
+            color: CHART_THEME.axisLabelColor,
+            borderColor: CHART_THEME.axisLabelColor
           },
           textStyle: {
-            color: '#758696'
+            color: CHART_THEME.axisLabelColor
           },
           start: 50,
           end: 100
@@ -175,7 +198,7 @@ export const useChartConfig = () => {
 
       animation: true,
       animationDuration: 300,
-      animationEasing: 'linear',
+      animationEasing: 'cubicOut',
 
       // Series configuration
       series: [

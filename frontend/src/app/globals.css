@@ -2,13 +2,205 @@
 @tailwind components;
 @tailwind utilities;
 
-/* globals.css */
+/* 防止初始化时的闪烁 */
+html {
+  color-scheme: light dark;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+/* 主题切换动画的分层控制 */
+html.theme-initialized {
+  /* 根元素的基础过渡 */
+  transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 文本颜色优先级最高，最快切换 */
+html.theme-initialized .text-primary,
+html.theme-initialized .text-secondary,
+html.theme-initialized .text-muted,
+html.theme-initialized h1,
+html.theme-initialized h2,
+html.theme-initialized h3,
+html.theme-initialized h4,
+html.theme-initialized h5,
+html.theme-initialized h6,
+html.theme-initialized p,
+html.theme-initialized span,
+html.theme-initialized div {
+  transition: color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 背景色次优先级，稍慢切换 */
+html.theme-initialized .bg-surface,
+html.theme-initialized .bg-surface-secondary,
+html.theme-initialized .bg-surface-tertiary {
+  transition: background-color 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 边框和阴影最后切换 */
+html.theme-initialized * {
+  transition: border-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 图表容器的特殊处理 */
+html.theme-initialized [id*="chart"],
+html.theme-initialized .echarts-container,
+html.theme-initialized .chart-container {
+  transition: background-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600;
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* 隐藏特定元素的滚动条 */
 div[id="order-list"] {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  div[id="order-list"]::-webkit-scrollbar {
-    display: none;
-  }
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+div[id="order-list"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* 优化焦点样式 */
+.focus-visible:focus {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* 优化按钮悬停效果 */
+.btn-hover {
+  @apply transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95;
+}
+
+/* 卡片阴影优化 */
+.card-shadow {
+  @apply shadow-sm dark:shadow-gray-900/20;
+  transition: box-shadow 0.3s ease;
+}
+
+.card-shadow-lg {
+  @apply shadow-lg dark:shadow-gray-900/40;
+  transition: box-shadow 0.3s ease;
+}
+
+/* 边框优化 */
+.border-theme {
+  @apply border-gray-200 dark:border-gray-700;
+}
+
+/* 文本颜色优化 */
+.text-primary {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.text-secondary {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+.text-muted {
+  @apply text-gray-500 dark:text-gray-500;
+}
+
+/* 背景颜色优化 */
+.bg-surface {
+  @apply bg-white dark:bg-gray-900;
+}
+
+.bg-surface-secondary {
+  @apply bg-gray-50 dark:bg-gray-800;
+}
+
+.bg-surface-tertiary {
+  @apply bg-gray-100 dark:bg-gray-700;
+}
+
+/* 主题切换时的特殊处理 */
+.theme-switching {
+  pointer-events: none;
+}
+
+.theme-switching * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 主题切换准备阶段 */
+.theme-preparing {
+  /* 预备阶段，保持当前状态 */
+}
+
+.theme-preparing * {
+  transition: none !important;
+}
+
+/* 主题切换执行阶段 */
+.theme-transitioning {
+  /* 执行阶段，启用分层动画 */
+}
+
+.theme-transitioning .text-primary,
+.theme-transitioning .text-secondary,
+.theme-transitioning .text-muted,
+.theme-transitioning h1,
+.theme-transitioning h2,
+.theme-transitioning h3,
+.theme-transitioning h4,
+.theme-transitioning h5,
+.theme-transitioning h6,
+.theme-transitioning p,
+.theme-transitioning span,
+.theme-transitioning div {
+  transition: color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.theme-transitioning .bg-surface,
+.theme-transitioning .bg-surface-secondary,
+.theme-transitioning .bg-surface-tertiary {
+  transition: background-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s !important;
+}
+
+.theme-transitioning * {
+  transition: border-color 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s,
+              box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s !important;
+}
+
+/* 减少重绘和重排 */
+.will-change-theme {
+  will-change: background-color, color, border-color;
+}
+
+/* 优化图表容器 */
+.chart-container {
+  contain: layout style paint;
+  will-change: background-color;
+}
   

@@ -1,5 +1,5 @@
 import { Switch } from "@heroui/react";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { useThemeStore } from "@/store/themeStore";
 
@@ -15,7 +15,7 @@ export const MoonIcon = (props: React.SVGProps<SVGSVGElement>) => {
             {...props}
         >
             <path
-                d="M21.53 15.93c-.16-.27-.61-.69-1.73-.49a8.46 8.46 0 01-1.88.13 8.409 8.409 0 01-5.91-2.82 8.068 8.068 0 01-1.44-8.66c.44-1.01.13-1.54-.09-1.76s-.77-.55-1.83-.11a10.318 10.318 0 00-6.32 10.21 10.475 10.475 0 007.04 8.99 10 10 0 002.89.55c.16.01.32.02.48.02a10.5 10.5 0 008.47-4.27c.67-.93.49-1.519.32-1.79z"
+                d="M21.53 15.93c-.16-.27-.61-.69-1.73-.49a8.46 8.46 0 01-1.88.13 8.409 8.409 0 01-5.91-2.82 8.068 8.068 0 01-1.44-8.66c.44-1.01.13-1.54-.09-1.76s-.77-.55-1.83-.11a10.318 10.318 0 00-6.32 10.21 10.475 10.475 0 007.04 8.99 10 10 0 002.89.55c.16.01.32.02.48.02a10.5 10.5 0 008.47-4.27c.6-.67 1.83-2.07.2-2.4z"
                 fill="currentColor"
             />
         </svg>
@@ -42,22 +42,42 @@ export const SunIcon = (props: React.SVGProps<SVGSVGElement>) => {
 };
 
 const ThemeSwitch = () => {
-    const setTheme = useThemeStore((state) => state.setTheme);
-    const [isSelected, setIsSelected] = React.useState(true);
+    const { theme, setTheme, isInitialized } = useThemeStore((state) => state);
+    
+    // 使用 useMemo 优化计算
+    const isSelected = useMemo(() => theme === 'dark', [theme]);
 
-    const handleChange = (selected: boolean) => {
-        setIsSelected(selected);
-        setTheme(selected ? 'light' : 'dark');
-    };
+    // 使用 useCallback 优化事件处理函数
+    const handleChange = useCallback((selected: boolean) => {
+        if (!isInitialized) return; // 确保初始化完成后才允许切换
+        
+        const newTheme = selected ? 'dark' : 'light';
+        setTheme(newTheme);
+    }, [setTheme, isInitialized]);
+
+    // 如果还未初始化，显示加载状态
+    if (!isInitialized) {
+        return (
+            <div className="w-14 h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+        );
+    }
 
     return (
         <Switch
             isSelected={isSelected}
             onValueChange={handleChange}
-            color="success"
+            color="primary"
             endContent={<MoonIcon />}
             size="lg"
             startContent={<SunIcon />}
+            classNames={{
+                base: "transition-all duration-300 ease-in-out hover:scale-105 active:scale-95",
+                wrapper: "group-data-[selected=true]:bg-primary-500 group-data-[selected=false]:bg-default-200 transition-all duration-300 ease-in-out",
+                thumb: "group-data-[selected=true]:ml-6 group-data-[selected=false]:ml-0 transition-all duration-300 ease-in-out shadow-lg",
+                startContent: "text-yellow-500 transition-all duration-300 ease-in-out",
+                endContent: "text-blue-400 transition-all duration-300 ease-in-out"
+            }}
+            aria-label="切换主题"
         />
     );
 }

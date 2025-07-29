@@ -78,7 +78,7 @@ const CreateOrder = () => {
     }
 
     return (
-        <div className="flex flex-col w-80 h-full rounded-tl-[6px]">
+        <div className="flex flex-col w-80 h-full rounded-tl-[6px] bg-surface">
             <ToastProvider placement='top-center' toastOffset={60} />
             
             <OrderHeader />
@@ -92,8 +92,14 @@ const CreateOrder = () => {
 
             <Tabs
                 aria-label="交易选项"
-                className="bg-white dark:bg-gray-800 h-fit w-full border-1 block grid grid-cols-2 gap-4"
+                className="bg-surface h-fit w-full border-theme"
                 variant="underlined"
+                classNames={{
+                    tabList: "bg-surface-secondary border-b border-theme",
+                    tab: "text-secondary data-[selected=true]:text-primary",
+                    tabContent: "text-secondary data-[selected=true]:text-primary",
+                    panel: "p-0"
+                }}
             >
                 <Tab key="limit" title={<div className="py-2">限价委托</div>} className="h-full p-0">
                     <OrderForm

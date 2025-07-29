@@ -35,22 +35,22 @@ const OrderForm = ({
     const assets = useAssetsStore(state => state.assets)
 
     return (
-        <Card className="h-full rounded-none">
+        <Card className="h-full rounded-none bg-surface border-theme">
             <CardBody className="p-4">
                 {/* 价格输入 - 仅限价委托显示 */}
                 {!isMarketOrder && (
                     <div className="mb-4">
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <div className="flex justify-between text-xs text-secondary mb-2">
                             <span>价格 (USDT)</span>
                         </div>
                         <div className="relative">
                             <input
                                 type="text"
-                                className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md p-2 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                className="w-full bg-surface-secondary border border-theme rounded-lg p-3 text-primary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-all duration-200"
                                 placeholder="0.00"
                                 defaultValue="103,252.8"
                             />
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded text-xs">
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-surface-tertiary text-secondary px-3 py-1 rounded-md text-xs font-medium">
                                 对手价
                             </div>
                         </div>
@@ -60,10 +60,10 @@ const OrderForm = ({
                 {/* 市价委托说明 */}
                 {isMarketOrder && (
                     <div className="mb-4">
-                        <div className="flex justify-between text-xs mb-1">
+                        <div className="flex justify-between text-xs text-secondary mb-2">
                             <span>市价 (USDT)</span>
                         </div>
-                        <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md p-3 text-gray-700 dark:text-gray-300 text-sm">
+                        <div className="bg-surface-secondary border border-theme rounded-lg p-4 text-secondary text-sm">
                             以市场最优价格成交
                         </div>
                     </div>
@@ -71,16 +71,20 @@ const OrderForm = ({
 
                 {/* 数量输入 */}
                 <div className="mb-4">
-                    <div className="flex justify-between text-xs mb-1">
+                    <div className="flex justify-between text-xs text-secondary mb-2">
                         <span>数量 (USDT)</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         {/* 仓位大小输入 */}
                         <Input
                             value={percentage}
                             aria-label="仓位大小"
                             className="w-full"
-                            radius="sm"
+                            radius="lg"
+                            classNames={{
+                                input: "text-primary",
+                                inputWrapper: "bg-surface-secondary border-theme hover:border-primary-500 focus-within:border-primary-500"
+                            }}
                             onValueChange={(value: string) => {
                                 if (Number(value) || value === '') {
                                     setPercentage(value);
@@ -104,55 +108,67 @@ const OrderForm = ({
                             minValue={0}
                             step={1}
                             size='sm'
-                            color="foreground"
+                            color="primary"
+                            classNames={{
+                                track: "bg-surface-tertiary",
+                                filler: "bg-primary-500"
+                            }}
                         />
 
                         {/* 滑块标签 */}
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+                        <div className="flex justify-between text-xs text-muted">
                             <span>0</span>
                             <span>100%</span>
                         </div>
 
                         {/* 可用金额信息 */}
                         <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 dark:text-gray-500">可用 {(assets).toFixed(2)} USDT</span>
-                            <span className="text-blue-500">
-                                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                            <span className="text-muted">可用 {(assets).toFixed(2)} USDT</span>
+                            <span className="text-primary-500">
+                                <span className="inline-block w-2 h-2 bg-primary-500 rounded-full mr-1"></span>
                             </span>
                         </div>
 
                         {/* 杠杆信息 */}
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+                        <div className="flex justify-between text-xs text-muted">
                             <span>可开多 {(assets * Number(leverageValue.split('.')[0])).toFixed(2)} USDT</span>
                             <span>可开空 {(assets * Number(leverageValue.split('.')[0])).toFixed(2)} USDT</span>
                         </div>
                     </div>
                 </div>
 
-                {isMarketOrder && <Divider />}
+                {isMarketOrder && <Divider className="border-theme" />}
 
                 {/* 止盈止损选项 */}
-                <Card className="mb-4 pb-3 rounded-md bg-transparent" shadow="none">
+                <Card className="mb-4 pb-3 rounded-lg bg-surface-secondary border border-theme" shadow="none">
                     <CardHeader className="px-0">
                         <Checkbox
                             size="sm"
                             radius="sm"
                             isSelected={isshow}
                             onValueChange={(value) => setIsshow(value)}
+                            classNames={{
+                                base: "text-primary",
+                                wrapper: "border-theme"
+                            }}
                         >止盈/止损</Checkbox>
                     </CardHeader>
 
                     {isshow && <CardBody className="px-0">
                         {/* 止盈价格 */}
-                        <div className="mb-2">
-                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <div className="mb-3">
+                            <div className="flex justify-between text-xs text-secondary mb-2">
                                 <span>止盈价格 (USDT)</span>
                             </div>
                             <Input
                                 value={takeprofit}
                                 aria-label="止盈价格"
                                 className="w-full"
-                                radius="sm"
+                                radius="lg"
+                                classNames={{
+                                    input: "text-primary",
+                                    inputWrapper: "bg-surface border-theme hover:border-primary-500 focus-within:border-primary-500"
+                                }}
                                 onValueChange={(value: string) => {
                                     if (Number(value) || value === '') {
                                         setTakeprofit(value);
@@ -163,7 +179,7 @@ const OrderForm = ({
 
                         {/* 止损价格 */}
                         <div>
-                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                            <div className="flex justify-between text-xs text-secondary mb-2">
                                 <span>止损价格 (USDT)</span>
                             </div>
                             <div className="flex">
@@ -171,7 +187,11 @@ const OrderForm = ({
                                     value={stoploss}
                                     aria-label="止损价格"
                                     className="w-full"
-                                    radius="sm"
+                                    radius="lg"
+                                    classNames={{
+                                        input: "text-primary",
+                                        inputWrapper: "bg-surface border-theme hover:border-primary-500 focus-within:border-primary-500"
+                                    }}
                                     onValueChange={(value: string) => {
                                         if (Number(value) || value === '') {
                                             setStoploss(value);
@@ -185,18 +205,20 @@ const OrderForm = ({
                 </Card>
 
                 {/* 买入卖出按钮 */}
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-2 gap-4">
                     <Button
                         onPress={onBuyOrder}
                         color="success" 
-                        className="py-3 rounded-full font-medium"
+                        className="py-3 rounded-xl font-semibold btn-hover shadow-lg"
+                        size="lg"
                     >
                         开多
                     </Button>
                     <Button
                         onPress={onSellOrder}
                         color="danger" 
-                        className="py-3 rounded-full font-medium"
+                        className="py-3 rounded-xl font-semibold btn-hover shadow-lg"
+                        size="lg"
                     >
                         开空
                     </Button>

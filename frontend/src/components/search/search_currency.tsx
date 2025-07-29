@@ -60,7 +60,7 @@ const CryptoSearchModal = () => {
     return (
         <> 
             <Button
-                className='text-md'
+                className='text-md btn-hover'
                 size="sm"
                 onPress={() => { setIsOpen(true) }}
             >
@@ -70,7 +70,7 @@ const CryptoSearchModal = () => {
 
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300"
                     onClick={(e) => {
                         // 允许点击遮罩层关闭模态框，但阻止事件冒泡到可能存在的父级可点击元素
                         if (e.target === e.currentTarget) {
@@ -81,14 +81,14 @@ const CryptoSearchModal = () => {
                 >
                     {/* 弹出框 */}
                     <div
-                        className="bg-white dark:bg-gray-900 rounded-lg w-3/5 h-3/4 flex flex-col"
+                        className="bg-surface rounded-xl w-3/5 h-3/4 flex flex-col card-shadow-lg border border-theme"
                         onClick={(e) => e.stopPropagation()} // 阻止点击模态框内容区关闭模态框
                     >
 
-                        <div className='mb-4 mt-3 ml-6 flex items-center justify-between'>
-                            <span className="text-xl font-bold">商品代码查询</span>
+                        <div className='mb-4 mt-6 mx-6 flex items-center justify-between'>
+                            <span className="text-xl font-bold text-primary">商品代码查询</span>
                             <Button
-                                className="bg-transparent flex items-center justify-center" 
+                                className="bg-transparent hover:bg-surface-secondary flex items-center justify-center btn-hover" 
                                 size='sm'
                                 onPress={() => setIsOpen(false)}
                             >
@@ -96,25 +96,25 @@ const CryptoSearchModal = () => {
                             </Button>
                         </div>
 
-                        <Divider orientation="horizontal" className='my-1' />
+                        <Divider orientation="horizontal" className='my-2' />
 
-                        <div className="flex items-center my-1 mx-4">
+                        <div className="flex items-center my-3 mx-6">
                             <SearchIcon />
                             <input
                                 type='text'
                                 placeholder="搜索"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className='ml-3 bordrer-none outline-none w-3/4 bg-transparent dark:text-white dark:placeholder-gray-400'
+                                className='ml-3 border-none outline-none w-3/4 bg-transparent text-primary placeholder:text-secondary focus:ring-2 focus:ring-primary-500 rounded-md px-2 py-1'
                             />
                         </div>
 
-                        <Divider orientation="horizontal" className='my-1' />
+                        <Divider orientation="horizontal" className='my-2' />
 
                         <div className="overflow-y-auto h-3/4">
                             <Listbox
                                 aria-label="选择加密货币"
-                                className='px-0 dark:text-white'
+                                className='px-0 text-primary'
                                 virtualization={{
                                     maxListboxHeight: 40000,
                                     itemHeight: 60,
@@ -122,21 +122,21 @@ const CryptoSearchModal = () => {
                             >
                                 {filteredCryptos.map((crypto) => (
                                     <ListboxItem key={crypto.id}
-                                        className='rounded-none py-3 dark:hover:bg-gray-800'
+                                        className='rounded-none py-3 hover:bg-surface-secondary transition-colors duration-200'
                                         textValue={`${crypto.symbol} ${crypto.name}`}
                                         onPress={() => handleCryptoSelect(crypto)} // 建议 ListboxItem 也使用 onPress
                                     >
                                         <div className='mx-4 flex flex-row items-center'>
-                                            <div className="font-bold text-[16px] mr-16 dark:text-white">{crypto.symbol}</div>
-                                            <div className="dark:text-gray-300">{crypto.name}</div>
+                                            <div className="font-bold text-[16px] mr-16 text-primary">{crypto.symbol}</div>
+                                            <div className="text-secondary">{crypto.name}</div>
                                         </div>
                                     </ListboxItem>
                                 ))}
                             </Listbox>
                         </div>
 
-                        <div className='bg-gray-100 dark:bg-gray-800 flex grow items-center justify-center'>
-                            <span className='text-gray-700 dark:text-gray-300 text-sm'>只需在图表上开始输入，即可拉出此搜索框</span>
+                        <div className='bg-surface-secondary flex grow items-center justify-center border-t border-theme'>
+                            <span className='text-secondary text-sm'>只需在图表上开始输入，即可拉出此搜索框</span>
                         </div>
                     </div>
                 </div>
