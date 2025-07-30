@@ -137,8 +137,6 @@ const OrderForm = ({
                     </div>
                 </div>
 
-                {isMarketOrder && <Divider className="border-theme" />}
-
                 {/* 止盈止损选项 */}
                 <Card className="mb-4 pb-3 rounded-lg bg-surface-secondary border border-theme" shadow="none">
                     <CardHeader className="px-0">

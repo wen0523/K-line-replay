@@ -3,11 +3,11 @@ import { useThemeStore } from '@/store/themeStore';
 
 import type { KLineData } from '@/types';
 
-// Light theme colors
+// 浅色主题颜色配置
 export const LIGHT_CHART_THEME = {
-  upColor: '#16a34a',       // Green for up candles
+  upColor: '#16a34a',       // 上涨蜡烛颜色（绿色）
   upBorderColor: '#16a34a',
-  downColor: '#dc2626',     // Red for down candles
+  downColor: '#dc2626',     // 下跌蜡烛颜色（红色）
   downBorderColor: '#dc2626',
   crosshairColor: '#6b7280',
   gridLineColor: '#e5e7eb',
@@ -20,11 +20,11 @@ export const LIGHT_CHART_THEME = {
   splitLineColor: '#f3f4f6'
 };
 
-// Dark theme colors
+// 深色主题颜色配置
 export const DARK_CHART_THEME = {
-  upColor: '#26a69a',       // Green for up candles
+  upColor: '#26a69a',       // 上涨蜡烛颜色（绿色）
   upBorderColor: '#26a69a',
-  downColor: '#ef5350',     // Red for down candles
+  downColor: '#ef5350',     // 下跌蜡烛颜色（红色）
   downBorderColor: '#ef5350',
   crosshairColor: '#758696',
   gridLineColor: '#131722',
@@ -45,12 +45,12 @@ export const useChartConfig = () => {
     return {
       backgroundColor: CHART_THEME.backgroundColor,
 
-      // Dataset configuration
+      // 数据集配置
       dataset: {
         source: data
       },
 
-      // Tooltip configuration
+      // 提示框配置
       tooltip: {
         trigger: 'axis',
         triggerOn: 'mousemove|click',
@@ -77,7 +77,7 @@ export const useChartConfig = () => {
             const data = params[0].data as KLineData;
             const [date, open, high, low, close, volume] = data;
 
-            // Calculate price change percentage
+            // 计算价格变化百分比
             const priceChangePercent = Number(((close - open) / open * 100).toFixed(2));
             const changeColor = close >= open ? CHART_THEME.upColor : CHART_THEME.downColor;
             const amplitude = Math.abs(Number((((high - low) / low * 100).toFixed(2))));
@@ -102,7 +102,7 @@ export const useChartConfig = () => {
         }
       },
 
-      // Grid configuration
+      // 网格配置
       grid: [
         {
           left: '2%',
@@ -114,7 +114,7 @@ export const useChartConfig = () => {
         },
       ],
 
-      // X-axis configuration
+      // X轴配置
       xAxis: [
         {
           type: 'category',
@@ -142,7 +142,7 @@ export const useChartConfig = () => {
         },
       ],
 
-      // Y-axis configuration
+      // Y轴配置
       yAxis: [
         {
           scale: true,
@@ -167,7 +167,7 @@ export const useChartConfig = () => {
         },
       ],
 
-      // Zoom control configuration
+      // 缩放控制配置
       dataZoom: [
         {
           type: 'inside',
@@ -200,7 +200,7 @@ export const useChartConfig = () => {
       animationDuration: 300,
       animationEasing: 'cubicOut',
 
-      // Series configuration
+      // 系列配置
       series: [
         {
           name: 'Candlestick',

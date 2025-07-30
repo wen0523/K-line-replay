@@ -2,30 +2,32 @@ import { useRef, useEffect } from 'react';
 import * as echarts from 'echarts';
 import { useThemeStore } from '@/store/themeStore';
 import type { KLineData } from '@/types';
+import { useChartConfig } from '@/hooks/useChartConfig';
 
 export const useChartInstance = () => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const theme = useThemeStore((state) => state.theme);
+  const { getChartOption } = useChartConfig();
 
-  // Initialize chart with data and options
+  // 使用数据和配置初始化图表
   const initChart = async (data: KLineData[], options: echarts.EChartsOption) => {
     if (!chartRef.current) return;
 
     try {
-      // Dispose previous chart instance if exists
+      // 如果存在之前的图表实例，先销毁它
       if (chartInstance.current) {
         chartInstance.current.dispose();
       }
 
-      // Initialize ECharts instance with current theme
+      // 使用当前主题初始化 ECharts 实例
       chartInstance.current = echarts.init(chartRef.current, theme);
 
       if (!data || !Array.isArray(data) || data.length === 0) {
         throw new Error('No data received');
       }
 
-      // Set options and render chart
+      // 设置配置并渲染图表
       chartInstance.current.setOption(options);
 
     } catch (e) {
@@ -33,30 +35,7 @@ export const useChartInstance = () => {
     }
   };
 
-  // Update chart theme without full reinitialization
-  const updateTheme = async (newTheme: 'light' | 'dark') => {
-    if (!chartInstance.current || !chartRef.current) return;
-
-    try {
-      // Get current options
-      const currentOptions = chartInstance.current.getOption();
-      
-      // Dispose and recreate with new theme
-      chartInstance.current.dispose();
-      chartInstance.current = echarts.init(chartRef.current, newTheme);
-      
-      // Restore options with smooth transition
-      chartInstance.current.setOption(currentOptions, {
-        notMerge: true,
-        lazyUpdate: false,
-        silent: false
-      });
-    } catch (e) {
-      console.error('Failed to update chart theme:', e);
-    }
-  };
-
-  // Refresh chart with new data
+  // 使用新数据刷新图表
   const refreshChart = async (data: KLineData[]) => {
     if (chartInstance.current && data.length > 0) {
       await chartInstance.current.setOption({
@@ -67,14 +46,14 @@ export const useChartInstance = () => {
     }
   };
 
-  // Handle window resize
+  // 处理窗口大小调整
   const handleResize = () => {
     if (chartInstance.current) {
       chartInstance.current.resize();
     }
   };
 
-  // Cleanup chart instance
+  // 清理图表实例
   const cleanup = () => {
     if (chartInstance.current) {
       chartInstance.current.dispose();
@@ -82,14 +61,26 @@ export const useChartInstance = () => {
     }
   };
 
-  // Handle theme changes
+  const getCurrentChartData = (chart: echarts.ECharts): KLineData[] => {
+    const option = chart?.getOption();
+    if (!option) return [];
+
+    // 如果是用 dataset 设置的数据
+    const dataset = option.dataset as any;
+    return (dataset?.[0]?.source as KLineData[]) ?? [];
+  };
+
+
+  // 处理主题变化
   useEffect(() => {
     if (chartInstance.current) {
-      updateTheme(theme);
+      const currentData = getCurrentChartData(chartInstance.current);
+      const option = getChartOption(currentData);
+      chartInstance.current.setOption(option, true);
     }
   }, [theme]);
 
-  // Setup resize listener
+  // 设置窗口大小调整监听器
   useEffect(() => {
     window.addEventListener('resize', handleResize);
     return () => {
@@ -101,7 +92,6 @@ export const useChartInstance = () => {
     chartRef,
     chartInstance,
     initChart,
-    updateTheme,
     refreshChart,
     handleResize,
     cleanup

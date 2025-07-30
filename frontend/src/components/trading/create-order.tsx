@@ -55,6 +55,7 @@ const CreateOrder = () => {
             }
             setAssets(assets - amount / Number(leverageValue.split('.')[0]))
         } else {
+            // 全仓暂不支持
             forcedliquidation = -1
             setAssets(assets - amount)
         }

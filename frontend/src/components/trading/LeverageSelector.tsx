@@ -1,6 +1,6 @@
 'use client'
 
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@heroui/react"
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, Tooltip } from "@heroui/react"
 
 interface LeverageSelectorProps {
     leverageValue: string
@@ -29,9 +29,11 @@ const LeverageSelector = ({
                     aria-label="过滤选项"
                     onAction={(key) => setFilterValue(key as "逐仓" | "全仓")}
                     className="bg-surface border border-theme"
+                    disabledKeys={['全仓']}
                 >
-                    <DropdownItem key="逐仓" className="text-center text-primary hover:bg-surface-secondary">逐仓</DropdownItem>
-                    <DropdownItem key="全仓" className="text-center text-primary hover:bg-surface-secondary">全仓</DropdownItem>
+                    <DropdownItem showDivider={true} key="逐仓" className="text-center text-primary hover:bg-surface-secondary">逐仓</DropdownItem>
+                    <DropdownItem description="全仓暂不支持" key="全仓" className="text-center text-primary hover:bg-surface-secondary">
+                    </DropdownItem>
                 </DropdownMenu>
             </Dropdown>
 
