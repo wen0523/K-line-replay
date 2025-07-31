@@ -60,7 +60,7 @@ const CryptoSearchModal = () => {
     return (
         <> 
             <Button
-                className='text-md btn-hover'
+                className='bg-surface-secondary text-md btn-hover'
                 size="sm"
                 onPress={() => { setIsOpen(true) }}
             >
@@ -124,7 +124,7 @@ const CryptoSearchModal = () => {
                                     <ListboxItem key={crypto.id}
                                         className='rounded-none py-3 hover:bg-surface-secondary transition-colors duration-200'
                                         textValue={`${crypto.symbol} ${crypto.name}`}
-                                        onPress={() => handleCryptoSelect(crypto)} // 建议 ListboxItem 也使用 onPress
+                                        onPress={() => handleCryptoSelect(crypto)}
                                     >
                                         <div className='mx-4 flex flex-row items-center'>
                                             <div className="font-bold text-[16px] mr-16 text-primary">{crypto.symbol}</div>

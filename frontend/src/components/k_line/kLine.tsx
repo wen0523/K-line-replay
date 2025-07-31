@@ -152,7 +152,7 @@ const CandlestickChart: React.FC = () => {
   );
 
   return (
-    <div className="relative rounded-lg h-full bg-[#131722] shadow-lg overflow-hidden">
+    <div className="relative h-full bg-[#131722] shadow-lg overflow-hidden">
       {isLoading && renderSkeleton()}
       
       {/* 图表容器 */}

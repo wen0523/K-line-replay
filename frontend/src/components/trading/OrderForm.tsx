@@ -4,6 +4,7 @@ import { Card, CardBody, Input, Slider, Checkbox, CardHeader, Divider, Button } 
 import { useAssetsStore } from '@/store/assetsStore'
 
 interface OrderFormProps {
+    price: number
     percentage: string
     setPercentage: (value: string) => void
     stoploss: string
@@ -19,6 +20,7 @@ interface OrderFormProps {
 }
 
 const OrderForm = ({
+    price,
     percentage,
     setPercentage,
     stoploss,
@@ -35,7 +37,7 @@ const OrderForm = ({
     const assets = useAssetsStore(state => state.assets)
 
     return (
-        <Card className="h-full rounded-none bg-surface border-theme">
+        <Card className="h-full rounded-none shadow-none bg-surface">
             <CardBody className="p-4">
                 {/* 价格输入 - 仅限价委托显示 */}
                 {!isMarketOrder && (
@@ -46,9 +48,9 @@ const OrderForm = ({
                         <div className="relative">
                             <input
                                 type="text"
-                                className="w-full bg-surface-secondary border border-theme rounded-lg p-3 text-primary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-all duration-200"
+                                className="w-full bg-surface-secondary border border-theme rounded-lg px-3 py-2 text-primary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-all duration-200"
                                 placeholder="0.00"
-                                defaultValue="103,252.8"
+                                defaultValue={price}
                             />
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-surface-tertiary text-secondary px-3 py-1 rounded-md text-xs font-medium">
                                 对手价
@@ -63,8 +65,13 @@ const OrderForm = ({
                         <div className="flex justify-between text-xs text-secondary mb-2">
                             <span>市价 (USDT)</span>
                         </div>
-                        <div className="bg-surface-secondary border border-theme rounded-lg p-4 text-secondary text-sm">
-                            以市场最优价格成交
+                        <div className="relative">
+                            <input
+                                disabled
+                                type="text"
+                                className="w-full bg-surface-secondary border border-theme rounded-lg px-3 py-2 text-primary transition-all duration-200"
+                                placeholder="以市场最优价格成交"
+                            />
                         </div>
                     </div>
                 )}
@@ -80,10 +87,9 @@ const OrderForm = ({
                             value={percentage}
                             aria-label="仓位大小"
                             className="w-full"
-                            radius="lg"
                             classNames={{
                                 input: "text-primary",
-                                inputWrapper: "bg-surface-secondary border-theme hover:border-primary-500 focus-within:border-primary-500"
+                                inputWrapper: "rounded-lg bg-surface-secondary border-theme hover:border-primary-500 focus-within:border-primary-500"
                             }}
                             onValueChange={(value: string) => {
                                 if (Number(value) || value === '') {
@@ -138,7 +144,7 @@ const OrderForm = ({
                 </div>
 
                 {/* 止盈止损选项 */}
-                <Card className="mb-4 pb-3 rounded-lg bg-surface-secondary border border-theme" shadow="none">
+                <Card className="bg-surface" shadow="none">
                     <CardHeader className="px-0">
                         <Checkbox
                             size="sm"
@@ -152,7 +158,7 @@ const OrderForm = ({
                         >止盈/止损</Checkbox>
                     </CardHeader>
 
-                    {isshow && <CardBody className="px-0">
+                    {isshow && <CardBody className="p-0 mb-3">
                         {/* 止盈价格 */}
                         <div className="mb-3">
                             <div className="flex justify-between text-xs text-secondary mb-2">
@@ -162,10 +168,9 @@ const OrderForm = ({
                                 value={takeprofit}
                                 aria-label="止盈价格"
                                 className="w-full"
-                                radius="lg"
                                 classNames={{
                                     input: "text-primary",
-                                    inputWrapper: "bg-surface border-theme hover:border-primary-500 focus-within:border-primary-500"
+                                    inputWrapper: "rounded-lg bg-surface-secondary border-theme hover:border-primary-500 focus-within:border-primary-500"
                                 }}
                                 onValueChange={(value: string) => {
                                     if (Number(value) || value === '') {
@@ -188,7 +193,7 @@ const OrderForm = ({
                                     radius="lg"
                                     classNames={{
                                         input: "text-primary",
-                                        inputWrapper: "bg-surface border-theme hover:border-primary-500 focus-within:border-primary-500"
+                                        inputWrapper: "rounded-lg bg-surface-secondary border-theme hover:border-primary-500 focus-within:border-primary-500"
                                     }}
                                     onValueChange={(value: string) => {
                                         if (Number(value) || value === '') {
@@ -206,7 +211,7 @@ const OrderForm = ({
                 <div className="grid grid-cols-2 gap-4">
                     <Button
                         onPress={onBuyOrder}
-                        color="success" 
+                        color="success"
                         className="py-3 rounded-xl font-semibold btn-hover shadow-lg"
                         size="lg"
                     >
@@ -214,7 +219,7 @@ const OrderForm = ({
                     </Button>
                     <Button
                         onPress={onSellOrder}
-                        color="danger" 
+                        color="danger"
                         className="py-3 rounded-xl font-semibold btn-hover shadow-lg"
                         size="lg"
                     >

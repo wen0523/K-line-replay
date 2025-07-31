@@ -11,7 +11,7 @@ const OrderHeader = () => {
     const priceChange = usePriceChangeStore(state => state.priceChange)
 
     return (
-        <Card className="h-24 p-4 rounded-none rounded-tl-[6px] bg-surface border-theme">
+        <Card shadow="none" className="h-24 p-4 rounded-none rounded-tl-[6px] bg-surface">
             <div className="flex justify-between items-center">
                 <div className="font-bold text-xl text-primary">{symbol}</div>
                 <div className={`text-lg font-medium ${priceUp ? "text-success" : "text-danger"}`}>

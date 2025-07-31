@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from 'uuid'
 import { useState } from "react"
-import { ToastProvider, Tabs, Tab } from "@heroui/react"
+import { Divider, ToastProvider, Tabs, Tab } from "@heroui/react"
 
 import { useSymbolStore } from "@/store/symbolStore"
 import { usePriceStore } from "@/store/priceStore"
@@ -81,9 +81,11 @@ const CreateOrder = () => {
     return (
         <div className="flex flex-col w-80 h-full rounded-tl-[6px] bg-surface">
             <ToastProvider placement='top-center' toastOffset={60} />
-            
+
             <OrderHeader />
-            
+
+            <Divider className='ml-4' />
+
             <LeverageSelector
                 leverageValue={leverageValue}
                 setLeverageValue={setLeverageValue}
@@ -91,19 +93,20 @@ const CreateOrder = () => {
                 setFilterValue={setFilterValue}
             />
 
+            <Divider className='ml-4 mb-2' />
+
             <Tabs
                 aria-label="交易选项"
-                className="bg-surface h-fit w-full border-theme"
-                variant="underlined"
+                className="bg-surface h-fit w-full px-4"
                 classNames={{
-                    tabList: "bg-surface-secondary border-b border-theme",
-                    tab: "text-secondary data-[selected=true]:text-primary",
-                    tabContent: "text-secondary data-[selected=true]:text-primary",
-                    panel: "p-0"
+                    tabList: "p-0",
                 }}
+                variant="underlined"
             >
-                <Tab key="limit" title={<div className="py-2">限价委托</div>} className="h-full p-0">
+                <Tab key="limit" title={<div className="py-2">限价委托</div>} className="bg-surface h-full py-0">
+                    <Divider className='ml-4' />
                     <OrderForm
+                        price={price}
                         percentage={percentage}
                         setPercentage={setPercentage}
                         stoploss={stoploss}
@@ -119,8 +122,10 @@ const CreateOrder = () => {
                     />
                 </Tab>
 
-                <Tab key="market" title={<div className="py-2">市价委托</div>} className="h-full p-0">
+                <Tab key="market" title={<div className="py-2">市价委托</div>} className="h-full py-0">
+                    <Divider className='ml-4' />
                     <OrderForm
+                        price={price}
                         percentage={percentage}
                         setPercentage={setPercentage}
                         stoploss={stoploss}
@@ -141,4 +146,3 @@ const CreateOrder = () => {
 }
 
 export default CreateOrder
-                        
