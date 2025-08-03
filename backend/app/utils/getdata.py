@@ -54,12 +54,12 @@ async def fetch_ohlcv_data(symbol, time, days):
                 break
             ohlcvs = ohlcvs + ohlcv
             startTime=ohlcv[-1][0]+int(parseTimeH(time)*60*60*1000)
+        # 时间戳转换成格式时间
+        # for i,item in enumerate(ohlcvs):
+        #     if i<len(ohlcvs)-2 and item[0]+int(parseTimeH(time)*60*60*1000)!=ohlcvs[i+1][0]:
+        #         print(time,timestamp_to_time(item[0],'s'))
 
-        for i,item in enumerate(ohlcvs):
-            if i<len(ohlcvs)-2 and item[0]+int(parseTimeH(time)*60*60*1000)!=ohlcvs[i+1][0]:
-                print(time,timestamp_to_time(item[0],'s'))
-
-            ohlcvs[i][0] = timestamp_to_time(item[0], extract_letters(time))
+        #     ohlcvs[i][0] = timestamp_to_time(item[0], extract_letters(time))
             
         all_ohlcv[time] = ohlcvs
 
