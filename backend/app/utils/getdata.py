@@ -60,12 +60,24 @@ async def fetch_ohlcv_data(symbol, time, days):
         #         print(time,timestamp_to_time(item[0],'s'))
 
         #     ohlcvs[i][0] = timestamp_to_time(item[0], extract_letters(time))
-            
-        all_ohlcv[time] = ohlcvs
+        # 
+        # 转换每条数据的格式
+        new_ohlcvs = []
+        for ohlcv in ohlcvs:
+            new_ohlcvs.append({
+                'timestamp': ohlcv[0],
+                'open': ohlcv[1],
+                'high': ohlcv[2],
+                'low': ohlcv[3],
+                'close': ohlcv[4],
+                'volume': ohlcv[5],
+            })
+        
+        all_ohlcv[time] = new_ohlcvs
 
         # 将ohlcv数据写入文件
         with open(path(symbol, time), 'w') as f:
-            json.dump(ohlcvs, f)
+            json.dump(new_ohlcvs, f)
     except Exception as e:
         print(f"Error fetching data for {symbol} with timeframe {time}: {e}")
         return {time:[]}

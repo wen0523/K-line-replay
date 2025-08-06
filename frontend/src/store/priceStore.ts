@@ -5,11 +5,6 @@ type PriceState = {
   setPrice: (val: number) => void;
 };
 
-type ReplayState = {
-  replay: boolean;
-  setReplay: (val: boolean) => void;
-}
-
 type PriceUpStore = {
   priceUp: boolean;
   setPriceUp: (val: boolean) => void;
@@ -33,9 +28,4 @@ export const usePriceChangeStore = create<PriceChangeStore>((set) => ({
 export const usePriceStore = create<PriceState>((set) => ({
   price: -1,
   setPrice: (val) => set({ price: val }),
-}));
-
-export const useReplayStore = create<ReplayState>((set) => ({
-  replay: false,
-  setReplay: (val) => set({ replay: val }),
 }));

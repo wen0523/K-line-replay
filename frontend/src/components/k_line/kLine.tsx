@@ -1,214 +1,202 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSymbolStore } from '@/store/symbolStore';
 import { useTimeStore } from '@/store/timeStore';
-import { usePriceStore, useReplayStore, usePriceChangeStore, usePriceUpStore } from '@/store/priceStore';
+import { usePriceStore, usePriceChangeStore, usePriceUpStore } from '@/store/priceStore';
+import { useChartInstanceStore } from '@/store/chartInstanceStore';
+import { useReplaySwitchStore } from '@/store/switchStore';
 
-// 自定义钩子
-import { useChartConfig } from '@/hooks/useChartConfig';
-import { useChartData } from '@/hooks/useChartData';
-import { useReplayLogic } from '@/hooks/useReplayLogic';
-import { useChartInstance } from '@/hooks/useChartInstance';
+
 
 // SVG 图标
 import SpeedIcon from '../svg/speed';
 import { StartIcon, StopIcon } from '../svg/switch';
 
+import { init, dispose, KLineData, Chart, registerLocale } from 'klinecharts'
+import { Button } from '@heroui/react'
+import getData from '@/api/getData'
+
+import { updateData } from '@/lib/utils'
+import type{ KLineDataItem, CandlestickDataItems } from '@/types';
+import { TimeUnitMap } from '@/lib/timeUnitMap'
+import { Language, languages } from '@/i18n';
+
 const CandlestickChart: React.FC = () => {
-  const symbol = useSymbolStore((state) => state.symbol);
-  const time = useTimeStore((state) => state.time);
-  const setPrice = usePriceStore((state) => state.setPrice);
-  const setPriceUp = usePriceUpStore((state) => state.setPriceUp);
-  const setPriceChange = usePriceChangeStore((state) => state.setPriceChange);
-  const setReplay = useReplayStore((state) => state.setReplay);
+  const allDataRef = useRef<CandlestickDataItems>({});
+  const allReplayDataRef = useRef<CandlestickDataItems>({});
+  const replayRef = useRef(false);
+  const replayCountRef = useRef(0);
+  const countRef = useRef(0);// 记录5m(目前最小的)数据量
+  const parameterRef = useRef({
+    symbol: '',
+    type: '',
+    span: 0,
+  })
 
-  const [history, setHistory] = useState(['BTC/USDT', '1d']);
-
-  // 自定义钩子
-  const { getChartOption } = useChartConfig();
-  const { allData, data, isLoading, fetchData, updateTimeframeData, resetData } = useChartData();
-  const { 
-    isReplay, 
-    switched, 
-    startReplay, 
-    exitReplay, 
-    moveForward, 
-    toggleAutoReplay, 
-    handleTimeframeChange,
-    cleanup: cleanupReplay 
-  } = useReplayLogic();
-  const { chartRef, initChart, refreshChart, cleanup: cleanupChart, handleResize } = useChartInstance();
-
-  // 使用数据初始化图表
-  const init = async () => {
-    const initData = await fetchData(symbol, time);
-    if (initData && initData.length > 0) {
-      const options = getChartOption(initData);
-      await initChart(initData, options);
+  const initChart = async () => {
+    // 语言配置，是否单独放在一个文件中(*_*)
+    for (const lang of Object.keys(languages) as Language[]) {
+      registerLocale(lang, languages[lang])
     }
-  };
-
-  // 处理回放按钮点击
-  const handleReplayToggle = () => {
-    if (!isReplay) {
-      console.log('Entering replay mode');
-      startReplay(refreshChart, time, allData, 500);
-    } else {
-      console.log('Exiting replay mode');
-      exitReplay(allData, refreshChart, time);
+    const chart = init('chart')
+    if (!chart) {
+      return
     }
-  };
+    useChartInstanceStore.getState().setChartInstance(chart)
 
-  // 处理自动回放切换
-  const handleAutoReplayToggle = () => {
-    toggleAutoReplay(allData, refreshChart, time);
-  };
+    
+    chart.setSymbol({ ticker: 'BTCUSDT', pricePrecision: 1, volumePrecision: 0 })
+    chart.setPeriod({ span: 1, type: 'day' })
+    // chart.createIndicator('MA', false, { id: 'candle_pane' })
+    // chart.createIndicator('VOL')
 
-  // 处理手动前进一步
-  const handleStepForward = () => {
-    moveForward(allData, refreshChart, time);
-  };
+    chart.setDataLoader({
+      getBars: async ({ type, timestamp, symbol, period, callback }) => {
+        const parameter = parameterRef.current
 
-  // 监听数据变化并更新图表
-  useEffect(() => {
-    refreshChart(data);
-  }, [data]);
+        if (parameter.symbol !== symbol.ticker) {// 交易对改变获取数据
+          console.log('交易对改变获取数据')
+          const response = await getData('BTCUSDT')
+          allDataRef.current = response
+          const key = period.span + TimeUnitMap[period.type]
+          console.log(key)
 
-  // 设置和清理
-  useEffect(() => {
-    init();
+          callback(response[key] || [])
+          parameterRef.current = {
+            symbol: symbol.ticker,
+            type: period.type,
+            span: period.span,
+          }
+          // 初始化其他信息(*_*)
 
-    // 组件卸载时清理
-    return () => {
-      console.log('Cleaning up chart resources');
-      cleanupReplay();
-      cleanupChart();
-      resetData();
-    };
-  }, []);
+        } else if ((parameter.type !== period.type && !replayRef.current) || (parameter.span !== period.span && !replayRef.current)) {// 周期变化
+          // 周期发生变化，但是 replay 没有开启
+          console.log('周期变化')
+          const allData = allDataRef.current
+          const key = period.span + TimeUnitMap[period.type]
 
-  useEffect(() => {
-    handleResize();
-  }, [isReplay]);
+          callback(allData[key] || [])
+          parameterRef.current = {
+            symbol: symbol.ticker,
+            type: period.type,
+            span: period.span,
+          }
+        } else {// replay
+          if (replayRef.current) {// replay 开启
+            if (parameter.type !== period.type || parameter.span !== period.span) {// 周期变化
+              // 周期发生变化， replay 开启，只进行回溯数据的切换
+              const allReplayData = allReplayDataRef.current
+              const key = period.span + TimeUnitMap[period.type]
 
-  // 处理交易对和时间周期变化
-  useEffect(() => {
-    if (history[0] !== symbol) {
-      // 交易对变化，重置所有状态
-      cleanupReplay();
-      setReplay(false);
-      setPrice(-1);
-      setPriceUp(true);
-      setPriceChange(0);
+              callback(allReplayData[key] || [])
+              parameterRef.current = {
+                symbol: symbol.ticker,
+                type: period.type,
+                span: period.span,
+              }
+            } else {// 数据更新
+              const allReplayData = allReplayDataRef.current
+              const allData = allDataRef.current
+              const count = countRef.current
 
-      fetchData(symbol, time);
-      setHistory([symbol, time]);
-    } else if (history[1] !== time) {
-      // 仅时间周期变化
-      if (!isReplay) {
-        updateTimeframeData(time);
-      } else {
-        handleTimeframeChange(allData, time, refreshChart);
+              if (count > (allData['5m']?.length || 0)) {// 数据量不足,5m改成自动获取到最小的，加上自动结束(*_*)
+                return
+              }
+              const minData = allData['5m']?.[count]
+              const m15Length = allReplayData['15m']?.length || 0;
+              const m15Data = allReplayData['15m']?.[m15Length - 1] as KLineData; 
+
+              const h1Length = allReplayData['1h']?.length || 0;
+              const h1Data = allReplayData['1h']?.[h1Length - 1] as KLineData;
+
+              const h4Length = allReplayData['4h']?.length || 0;
+              const h4Data = allReplayData['4h']?.[h4Length - 1] as KLineData;
+
+              const d1Length = allReplayData['1d']?.length || 0;
+              const d1Data = allReplayData['1d']?.[d1Length - 1] as KLineData;
+              if (minData) {
+                allReplayData['5m']?.push(minData)
+                // 改成自动的(*_*)
+                // 更新所有时间周期的数据
+                // 1日数据
+                if (d1Length != 0 && d1Length * 288 === countRef.current) {
+                  allReplayData['1d']?.push(minData);
+                } else if (d1Length != 0 && allReplayData['1d']) {
+                  allReplayData['1d'][d1Length - 1] = updateData(d1Data, minData);
+                }
+
+                // const data = allReplayData['1d']; 
+                // if (data) {
+                //   const data1d = data[data.length - 1];
+                //   const priceChange = Number(((data1d[4] - data1d[1]) / data1d[1] * 100).toFixed(2));
+                //   setPriceChange(priceChange);
+                // }
+
+                // 4小时数据
+                if (h4Length != 0 && h4Length * 48 === countRef.current) {
+                  allReplayData['4h']?.push(minData);
+                } else if (h4Length != 0 && allReplayData['4h']) {
+                  allReplayData['4h'][h4Length - 1] = updateData(h4Data, minData);
+                }
+
+                // 1小时数据
+                if (h1Length != 0 && h1Length * 12 === countRef.current) {
+                  allReplayData['1h']?.push(minData);
+                } else if (h1Length != 0 && allReplayData['1h']) {
+                  allReplayData['1h'][h1Length - 1] = updateData(h1Data, minData);
+                }
+
+                // 15分钟数据
+                if (m15Length != 0 && m15Length * 3 === countRef.current) {
+                  allReplayData['15m']?.push(minData);
+                } else if (m15Length != 0 && allReplayData['15m']) {
+                  allReplayData['15m'][m15Length - 1] = updateData(m15Data, minData);
+                }
+              }
+              countRef.current++
+              allReplayDataRef.current = allReplayData
+
+              const key = period.span + TimeUnitMap[period.type]
+              callback(allReplayData[key]?.slice(0, count) || [])
+            }
+          } else {// startReplay, 初始化replay数据
+            // 会不会数据内存太大(*_*)
+            const allData = allDataRef.current
+            const replayCount = replayCountRef.current
+
+            const allReplayData = {} as CandlestickDataItems
+            // 改成自动化的(*_*)
+            allReplayData['1d'] = allData['1d']?.slice(0, replayCount)
+            allReplayData['4h'] = allData['4h']?.slice(0, replayCount * 6)
+            allReplayData['1h'] = allData['1h']?.slice(0, replayCount * 24)
+            allReplayData['15m'] = allData['15m']?.slice(0, replayCount * 96)
+            allReplayData['5m'] = allData['5m']?.slice(0, replayCount * 288)
+
+            countRef.current = replayCount * 288
+
+            const key = period.span + TimeUnitMap[period.type]
+            allReplayDataRef.current = allReplayData
+            replayRef.current = true;
+
+            callback(allReplayData[key] || [])
+          }
+        }
       }
-      setHistory([symbol, time]);
+    })
+  }
+
+  useEffect(() => {
+    initChart()
+    return () => {
+      dispose('chart')
+      useChartInstanceStore.getState().setChartInstance(null)
     }
-  }, [symbol, time]);
-
-  // 生成加载状态的骨架屏
-  const renderSkeleton = () => (
-    <div className="animate-pulse h-full w-full flex flex-col">
-      {/* 图表区域骨架屏 */}
-      <div className="flex-1 bg-gray-800 w-full">
-        <div className="h-full w-full flex flex-col">
-          {/* 价格指示器 */}
-          <div className="flex justify-between px-6 py-4">
-            <div className="w-20 h-6 bg-gray-700 rounded"></div>
-            <div className="w-24 h-6 bg-gray-700 rounded"></div>
-            <div className="w-20 h-6 bg-gray-700 rounded"></div>
-          </div>
-
-          {/* 图表网格线 */}
-          <div className="flex-1 px-6 py-4 grid grid-rows-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="w-full h-0.5 bg-gray-700 rounded"></div>
-            ))}
-          </div>
-
-          {/* 时间指示器 */}
-          <div className="flex justify-between px-6 py-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="w-14 h-4 bg-gray-700 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 底部滑块骨架屏 */}
-      <div className="h-12 bg-gray-800 w-full px-6 py-2">
-        <div className="w-full h-full bg-gray-700 rounded"></div>
-      </div>
-    </div>
-  );
+  }, [])
 
   return (
-    <div className="relative h-full bg-[#131722] shadow-lg overflow-hidden">
-      {isLoading && renderSkeleton()}
-      
-      {/* 图表容器 */}
-      <div
-        ref={chartRef}
-        className="w-full h-full chart-container will-change-theme"
-        aria-label="K-line Chart"
-      />
-
-      {/* 控制面板 */}
-      {!isLoading && (
-        <div className="absolute top-3 right-3 flex flex-row items-center gap-3 z-10">
-          <div className="bg-[#1e222d] py-2 px-3 rounded-md shadow-sm text-sm">
-            <span className="text-gray-300">
-              {allData['1d']?.[0]?.[0]} - {allData['1d']?.[allData['1d']?.length - 1]?.[0]}
-            </span>
-          </div>
-
-          <button
-            className={`px-3 py-2 rounded-md text-sm font-medium shadow-sm transition-colors ${isReplay
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-[#2962ff] text-white hover:bg-blue-700'
-              }`}
-            onClick={handleReplayToggle}
-          >
-            {isReplay ? 'Exit Replay' : 'Start Replay'}
-          </button>
-
-          {isReplay && (
-            <div className="flex items-center gap-2">
-              <button
-                className={`p-2 rounded-md shadow-sm transition-colors ${switched
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-                  }`}
-                onClick={handleAutoReplayToggle}
-              >
-                {switched ? <StopIcon /> : <StartIcon />}
-              </button>
-
-              {!switched && (
-                <button
-                  disabled={switched}
-                  className="p-2 bg-[#2962ff] text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors"
-                  onClick={handleStepForward}
-                  title="Move one step forward"
-                >
-                  <SpeedIcon />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+    <div id="chart" className='w-full h-full bg-surface' />
+  )
 };
 
 export default CandlestickChart;

@@ -51,6 +51,19 @@ html.theme-initialized * {
               box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
+/* 菜单折叠图标的动画例外规则 */
+.menu-fold-icon {
+  transition: transform 1s ease-in-out !important;
+}
+
+/* 确保菜单图标在所有主题状态下都能正常动画 */
+html.theme-initialized .menu-fold-icon,
+html.theme-switching .menu-fold-icon,
+html.theme-preparing .menu-fold-icon,
+html.theme-transitioning .menu-fold-icon {
+  transition: transform 0.5s ease-in-out !important;
+}
+
 /* 图表容器的特殊处理 */
 html.theme-initialized [id*="chart"],
 html.theme-initialized .echarts-container,

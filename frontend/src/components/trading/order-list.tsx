@@ -9,7 +9,8 @@ import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useOrderStore } from "@/store/orderStore";
 import { usePriceStore } from "@/store/priceStore";
 import { useAssetsStore } from "@/store/assetsStore";
-import { useReplayStore } from '@/store/priceStore';
+import { useReplaySwitchStore } from '@/store/switchStore';
+
 
 import React from "react";
 
@@ -34,7 +35,7 @@ const OrderList = () => {
     const price = usePriceStore(state => state.price)
     const assets = useAssetsStore(state => state.assets)
     const setAssets = useAssetsStore(state => state.setAssets)
-    const replay = useReplayStore(state => state.replay)
+    const replay = useReplaySwitchStore(state => state.replaySwitch)
 
     const PriceDisplay = React.memo(({ price }: { price: number }) => (
         <div>
@@ -178,7 +179,7 @@ const OrderList = () => {
         <>
             {!replay ? null : (
                 <>
-                    <Card className='mt-1 rounded-none rounded-t-[6px] bg-surface px-4 pt-2 h-8 text-sm text-gray-400 border-b-1 grid grid-cols-9 gap-5'>
+                    <Card className='mt-1 rounded-none bg-surface px-4 pt-2 h-8 text-sm text-gray-400 border-b-1 grid grid-cols-9 gap-5'>
                         <span>交易品种</span>
                         <span>持仓量</span>
                         <span>标记价格</span>
