@@ -1,23 +1,16 @@
 import { create } from 'zustand';
 
 type ReplaySwitchState = {
-  replaySwitch: boolean;
-  setReplaySwitch: (val: boolean) => void;
-}
+  startReplaySwitch: boolean;
+  exitReplaySwitch: boolean;
 
-type MenuSwitchState = {
-  menuSwitch: boolean;
-  setMenuSwitch: (val: boolean) => void;
+  setStartReplaySwitch: (val: boolean) => void;
+  setExitReplaySwitch: (val: boolean) => void;
 }
 
 export const useReplaySwitchStore = create<ReplaySwitchState>((set) => ({
-
-  replaySwitch: false,
-  setReplaySwitch: (val) => set({ replaySwitch: val }),
-}));
-
-export const useMenuSwitchStore = create<MenuSwitchState>((set) => ({
-
-  menuSwitch: true,
-  setMenuSwitch: (val) => set({ menuSwitch: val }),
+  startReplaySwitch: false,
+  exitReplaySwitch: false,
+  setStartReplaySwitch: (val) => set({ startReplaySwitch: val }),  
+  setExitReplaySwitch: (val) => set({ exitReplaySwitch: val }),
 }));

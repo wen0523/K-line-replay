@@ -1,6 +1,9 @@
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@heroui/react";
 import { useState } from "react";
 import { useTimeStore } from "@/store/timeStore";
+import { useChartInstanceStore } from "@/store/chartInstanceStore";
+import { TimeUnitMapReverse, TimeUnit } from "@/lib/timeUnitMap";
+
 
 const SelectTime = () => {
     const [content, setContent] = useState('1D')
@@ -30,6 +33,8 @@ const SelectTime = () => {
                 onAction={(key) => {
                     if (key.toString() === time) return;
                     setTime(key.toString())
+                    useChartInstanceStore.getState().chartInstance?.setPeriod({ span: parseInt(key.toString().match(/\d+/g)?.[0] || '1'), type: TimeUnitMapReverse[key.toString().match(/[a-zA-Z]+/g)?.[0] || 'd'] as TimeUnit })
+
                     if (key.toString().includes('m')) {
                         setContent(key.toString());
                     } else {

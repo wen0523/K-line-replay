@@ -126,7 +126,7 @@ export default () => {
             span: period.span,
           }
           // 初始化其他信息(*_*)
-
+          
         } else if ((parameter.type !== period.type && !replayRef.current) || (parameter.span !== period.span && !replayRef.current)) {// 周期变化
           // 周期发生变化，但是 replay 没有开启
           console.log('周期变化')

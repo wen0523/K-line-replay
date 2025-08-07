@@ -18,15 +18,14 @@ import { Button } from '@heroui/react'
 import getData from '@/api/getData'
 
 import { updateData } from '@/lib/utils'
-import type{ KLineDataItem, CandlestickDataItems } from '@/types';
+import type { KLineDataItem, CandlestickDataItems } from '@/types';
 import { TimeUnitMap } from '@/lib/timeUnitMap'
 import { Language, languages } from '@/i18n';
 
 const CandlestickChart: React.FC = () => {
   const allDataRef = useRef<CandlestickDataItems>({});
   const allReplayDataRef = useRef<CandlestickDataItems>({});
-  const replayRef = useRef(false);
-  const replayCountRef = useRef(0);
+  const replayCountRef = useRef(100);
   const countRef = useRef(0);// 记录5m(目前最小的)数据量
   const parameterRef = useRef({
     symbol: '',
@@ -45,7 +44,6 @@ const CandlestickChart: React.FC = () => {
     }
     useChartInstanceStore.getState().setChartInstance(chart)
 
-    
     chart.setSymbol({ ticker: 'BTCUSDT', pricePrecision: 1, volumePrecision: 0 })
     chart.setPeriod({ span: 1, type: 'day' })
     // chart.createIndicator('MA', false, { id: 'candle_pane' })
@@ -54,10 +52,13 @@ const CandlestickChart: React.FC = () => {
     chart.setDataLoader({
       getBars: async ({ type, timestamp, symbol, period, callback }) => {
         const parameter = parameterRef.current
+        const replaySwitch = useReplaySwitchStore.getState().startReplaySwitch
+        const setReplaySwitch = useReplaySwitchStore.getState().setStartReplaySwitch
+        const exitReplaySwitch = useReplaySwitchStore.getState().exitReplaySwitch
 
         if (parameter.symbol !== symbol.ticker) {// 交易对改变获取数据
           console.log('交易对改变获取数据')
-          const response = await getData('BTCUSDT')
+          const response = await getData(symbol.ticker)
           allDataRef.current = response
           const key = period.span + TimeUnitMap[period.type]
           console.log(key)
@@ -69,8 +70,11 @@ const CandlestickChart: React.FC = () => {
             span: period.span,
           }
           // 初始化其他信息(*_*)
+          if (replaySwitch) {// 后期考虑在回放中切换交易对时，是否需要重置回放（在配置中设置）
+            setReplaySwitch(false)
+          }
 
-        } else if ((parameter.type !== period.type && !replayRef.current) || (parameter.span !== period.span && !replayRef.current)) {// 周期变化
+        } else if ((parameter.type !== period.type && !replaySwitch) || (parameter.span !== period.span && !replaySwitch)) {// 周期变化
           // 周期发生变化，但是 replay 没有开启
           console.log('周期变化')
           const allData = allDataRef.current
@@ -83,7 +87,7 @@ const CandlestickChart: React.FC = () => {
             span: period.span,
           }
         } else {// replay
-          if (replayRef.current) {// replay 开启
+          if (replaySwitch) {// replay 开启
             if (parameter.type !== period.type || parameter.span !== period.span) {// 周期变化
               // 周期发生变化， replay 开启，只进行回溯数据的切换
               const allReplayData = allReplayDataRef.current
@@ -95,6 +99,12 @@ const CandlestickChart: React.FC = () => {
                 type: period.type,
                 span: period.span,
               }
+            } else if (exitReplaySwitch) { // 退出回放(*_*)
+              setReplaySwitch(false)
+              const allData = allDataRef.current
+              const key = period.span + TimeUnitMap[period.type]
+
+              callback(allData[key] || [])
             } else {// 数据更新
               const allReplayData = allReplayDataRef.current
               const allData = allDataRef.current
@@ -105,7 +115,7 @@ const CandlestickChart: React.FC = () => {
               }
               const minData = allData['5m']?.[count]
               const m15Length = allReplayData['15m']?.length || 0;
-              const m15Data = allReplayData['15m']?.[m15Length - 1] as KLineData; 
+              const m15Data = allReplayData['15m']?.[m15Length - 1] as KLineData;
 
               const h1Length = allReplayData['1h']?.length || 0;
               const h1Data = allReplayData['1h']?.[h1Length - 1] as KLineData;
@@ -158,7 +168,7 @@ const CandlestickChart: React.FC = () => {
               allReplayDataRef.current = allReplayData
 
               const key = period.span + TimeUnitMap[period.type]
-              callback(allReplayData[key]?.slice(0, count) || [])
+              callback(allReplayData[key] || [])
             }
           } else {// startReplay, 初始化replay数据
             // 会不会数据内存太大(*_*)
@@ -177,7 +187,8 @@ const CandlestickChart: React.FC = () => {
 
             const key = period.span + TimeUnitMap[period.type]
             allReplayDataRef.current = allReplayData
-            replayRef.current = true;
+            // 回放数据初始化成功，开启回放
+            setReplaySwitch(true);
 
             callback(allReplayData[key] || [])
           }

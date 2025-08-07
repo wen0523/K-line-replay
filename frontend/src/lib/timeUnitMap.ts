@@ -1,3 +1,5 @@
+export type TimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
+
 // 时间单位映射表类型
 export type TimeUnitMapType = { [key: string]: string };
 
@@ -11,3 +13,13 @@ export const TimeUnitMap: TimeUnitMapType = {
     'month': 'M',
     'year': 'y',
 };
+
+export const TimeUnitMapReverse: TimeUnitMapType = {
+    's': 'second',
+    'm': 'minute',
+    'h': 'hour',
+    'd': 'day',
+    'w': 'week',
+    'M': 'month',
+    'y': 'year',
+}

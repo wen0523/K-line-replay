@@ -8,7 +8,7 @@ import SearchIcon from '../svg/search';
 import CloseIcon from '../svg/close';
 
 import { useSymbolStore } from '@/store/symbolStore';
-
+import { useChartInstanceStore } from '@/store/chartInstanceStore';
 // 虚拟加密货币数据
 const cryptoData = [
     { id: 'btc', name: 'Bitcoin', symbol: 'BTCUSDT' },
@@ -48,6 +48,7 @@ const CryptoSearchModal = () => {
             setSelectedCrypto(crypto);
             document.title = crypto.symbol
             setSymbol(crypto.symbol.replace('USDT', '/USDT'));
+            useChartInstanceStore.getState().chartInstance?.setSymbol({ ticker: crypto.symbol, pricePrecision: 1, volumePrecision: 0 })
         }
 
         setIsOpen(false);
