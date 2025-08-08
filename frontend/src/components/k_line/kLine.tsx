@@ -65,7 +65,6 @@ const CandlestickChart: React.FC = () => {
           const response = await getData(symbol.ticker)
           allDataRef.current = response
           const key = period.span + TimeUnitMap[period.type]
-          console.log(key)
 
           callback(response[key] || [])
           parameterRef.current = {

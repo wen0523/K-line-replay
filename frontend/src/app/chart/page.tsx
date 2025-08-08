@@ -21,6 +21,10 @@ import CandlestickChart from "@/components/k_line/kLine";
 import CreateOrder from '@/components/trading/create-order';
 import OrderList from '@/components/trading/order-list';
 import ThemeSwitch from '@/components/heroui/theme-switch';
+import Lines from '@/components/chart_tools/lines';
+import DeleteOverlay from '@/components/chart_tools/delete_overlay';
+
+
 
 // icon
 import { BackwardIcon, PlayIcon, PauseIcon, PlayPauseIcon } from '@heroicons/react/24/outline';
@@ -30,7 +34,6 @@ import IntervalLoop from '@/lib/IntervalLoop';
 
 import { useReplaySwitchStore } from '@/store/switchStore';
 import { useChartInstanceStore } from '@/store/chartInstanceStore';
-
 
 export default function ChartPage() {
   const startReplaySwitch = useReplaySwitchStore(state => state.startReplaySwitch);
@@ -149,8 +152,8 @@ export default function ChartPage() {
       <div className='flex-1 flex flex-row overflow-hidden'>
         {/* first */}
         <div className='bg-surface border-r flex flex-col w-14'>
-
-
+          <Lines />
+          <DeleteOverlay />
         </div>
 
         {/* second */}
