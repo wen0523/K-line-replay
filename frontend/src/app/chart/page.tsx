@@ -23,6 +23,8 @@ import OrderList from '@/components/trading/order-list';
 import ThemeSwitch from '@/components/heroui/theme-switch';
 import Lines from '@/components/chart_tools/lines';
 import DeleteOverlay from '@/components/chart_tools/delete_overlay';
+import HiddenOverlay from '@/components/chart_tools/hidden_overlay';
+
 
 
 
@@ -154,19 +156,13 @@ export default function ChartPage() {
         <div className='bg-surface border-r flex flex-col w-14'>
           <Lines />
           <DeleteOverlay />
+          <HiddenOverlay />
         </div>
 
         {/* second */}
         <div className="flex-1">
           <CandlestickChart />
         </div>
-
-        {/* third */}
-        {/* { && (
-          <div className="h-full ml-1 w-80 flex flex-col">
-            <CreateOrder />
-          </div>
-        )} */}
       </div>
 
     </div>

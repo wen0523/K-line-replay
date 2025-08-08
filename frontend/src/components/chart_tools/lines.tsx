@@ -5,11 +5,14 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { ToolMap, LineTypes } from '@/lib/toolMap';
 import { useChartInstanceStore } from '@/store/chartInstanceStore';
 import { useOverlayStore } from '@/store/overlayStore';
+import { useHiddenOverlayStore } from '@/store/switchStore';
+
 
 const Lines = () => {
     const [content, setContent] = useState<string>(LineTypes[0]);
     const chartInstance = useChartInstanceStore((state) => state.chartInstance);
     const setOverlayId = useOverlayStore((state) => state.setOverlayId);
+    const setHiddenOverlay = useHiddenOverlayStore((state) => state.setHiddenOverlay);
 
     const Rendering = () => {
         const Component = ToolMap[content];
@@ -17,10 +20,23 @@ const Lines = () => {
     }
 
     const drawLine = (key?: string) => {
+
+        // 当overlay为隐藏状态时，切换为显示状态
+        const hiddenOverlay = useHiddenOverlayStore.getState().hiddenOverlay;
+        if (hiddenOverlay) {
+            chartInstance?.overrideOverlay({
+                groupId: 'overlay',
+                visible: hiddenOverlay
+            })
+            setHiddenOverlay(!hiddenOverlay)
+        }
+
         const name = key ? key : content;
         chartInstance?.createOverlay({
             id: name + Math.random(),
             name: name,
+            groupId: 'overlay',
+
             onSelected: (e) => {
                 setOverlayId(e.overlay.id)
             },
@@ -36,14 +52,17 @@ const Lines = () => {
                 {Rendering()}
             </Button>
             <Dropdown
+                placement='right'
                 className="bg-surface-secondary rounded-md"
-                // classNames={{
-                //     base: '!w-4',
-                //     content: '!w-4 !min-w-4'
-                // }}
+            // classNames={{
+            //     base: '!w-4',
+            //     content: '!w-4 !min-w-4'
+            // }}
             >
                 <DropdownTrigger>
-                    <ChevronRightIcon  className='w-2 bg-surface-secondary'/>
+                    <div className='flex flex-row items-center'>
+                        <ChevronRightIcon className='w-2 bg-surface-secondary' />
+                    </div>
                 </DropdownTrigger>
 
                 <DropdownMenu
@@ -57,11 +76,14 @@ const Lines = () => {
                         return (
                             <DropdownItem
                                 textValue={item}
-                                className="text-center hover:bg-surface-secondary"
+                                className="hover:bg-surface-secondary"
                                 key={item}
                                 onClick={() => drawLine(item)}
                             >
-                                <Component />
+                                <div className='flex flex-row items-center'>
+                                    <Component />
+                                    <span className='ml-2'>{item}</span>
+                                </div>
                             </DropdownItem>
                         )
                     })}
