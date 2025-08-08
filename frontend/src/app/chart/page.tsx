@@ -127,7 +127,9 @@ export default function ChartPage() {
                   {(onClose) => (
                     <>
                       <DrawerBody>
-                        <OrderList />
+                        <div className='h-[200px] mx-4'>
+                          <OrderList />
+                        </div>
                       </DrawerBody>
                     </>
                   )}

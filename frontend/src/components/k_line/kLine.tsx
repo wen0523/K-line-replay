@@ -23,6 +23,10 @@ import { TimeUnitMap } from '@/lib/timeUnitMap'
 import { Language, languages } from '@/i18n';
 
 const CandlestickChart: React.FC = () => {
+  const setPriceUp = usePriceUpStore(state => state.setPriceUp)
+  const setPriceChange = usePriceChangeStore(state => state.setPriceChange)
+  const setPrice = usePriceStore(state => state.setPrice)
+
   const allDataRef = useRef<CandlestickDataItems>({});
   const allReplayDataRef = useRef<CandlestickDataItems>({});
   const replayCountRef = useRef(100);
@@ -93,7 +97,12 @@ const CandlestickChart: React.FC = () => {
               const allReplayData = allReplayDataRef.current
               const key = period.span + TimeUnitMap[period.type]
 
+              // 根据时间周期变化（价格颜色）
+              const periodPrice = allReplayData[key]?.[allReplayData[key].length - 1] as KLineDataItem
+              setPriceUp(periodPrice['close'] > periodPrice['open'])
+
               callback(allReplayData[key] || [])
+
               parameterRef.current = {
                 symbol: symbol.ticker,
                 type: period.type,
@@ -136,13 +145,6 @@ const CandlestickChart: React.FC = () => {
                   allReplayData['1d'][d1Length - 1] = updateData(d1Data, minData);
                 }
 
-                // const data = allReplayData['1d']; 
-                // if (data) {
-                //   const data1d = data[data.length - 1];
-                //   const priceChange = Number(((data1d[4] - data1d[1]) / data1d[1] * 100).toFixed(2));
-                //   setPriceChange(priceChange);
-                // }
-
                 // 4小时数据
                 if (h4Length != 0 && h4Length * 48 === countRef.current) {
                   allReplayData['4h']?.push(minData);
@@ -168,6 +170,19 @@ const CandlestickChart: React.FC = () => {
               allReplayDataRef.current = allReplayData
 
               const key = period.span + TimeUnitMap[period.type]
+
+              // 更新显示的数据
+              if (minData) {
+                //实时价格
+                setPrice(minData['close'])
+                // 根据时间周期变化（价格颜色）
+                const periodPrice = allReplayData[key]?.[allReplayData[key].length - 1] as KLineDataItem
+                setPriceUp(periodPrice['close'] > periodPrice['open'])
+                // 24小时价格变化minPeriod改成自动的(*_*)
+                const h24LastPrice = allReplayData['5m']?.[allReplayData['5m'].length - 288] as KLineDataItem
+                setPriceChange(Number(((minData['close'] - h24LastPrice['open']) / h24LastPrice['open'] * 100).toFixed(2)))
+              }
+
               callback(allReplayData[key] || [])
             }
           } else {// startReplay, 初始化replay数据
@@ -189,6 +204,19 @@ const CandlestickChart: React.FC = () => {
             allReplayDataRef.current = allReplayData
             // 回放数据初始化成功，开启回放
             setReplaySwitch(true);
+
+            const minData = allReplayData['5m']?.[allReplayData['5m'].length - 1]
+            // 更新显示的数据
+            if (minData) {
+              //实时价格
+              setPrice(minData['close'])
+              // 根据时间周期变化（价格颜色）
+              const periodPrice = allReplayData[key]?.[allReplayData[key].length - 1] as KLineDataItem
+              setPriceUp(periodPrice['close'] > periodPrice['open'])
+              // 24小时价格变化minPeriod改成自动的(*_*)
+              const h24LastPrice = allReplayData['5m']?.[allReplayData['5m'].length - 288] as KLineDataItem
+              setPriceChange(Number(((minData['close'] - h24LastPrice['open']) / h24LastPrice['open'] * 100).toFixed(2)))
+            }
 
             callback(allReplayData[key] || [])
           }

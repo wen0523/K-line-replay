@@ -35,7 +35,6 @@ const OrderList = () => {
     const price = usePriceStore(state => state.price)
     const assets = useAssetsStore(state => state.assets)
     const setAssets = useAssetsStore(state => state.setAssets)
-    const replay = useReplaySwitchStore(state => state.replaySwitch)
 
     const PriceDisplay = React.memo(({ price }: { price: number }) => (
         <div>
@@ -177,69 +176,65 @@ const OrderList = () => {
 
     return (
         <>
-            {!replay ? null : (
-                <>
-                    <Card className='mt-1 rounded-none bg-surface px-4 pt-2 h-8 text-sm text-gray-400 border-b-1 grid grid-cols-9 gap-5'>
-                        <span>交易品种</span>
-                        <span>持仓量</span>
-                        <span>标记价格</span>
-                        <span>开仓均价</span>
-                        <span>浮动收益</span>
-                        <span>保证金</span>
-                        <span>市价全平</span>
-                        <span>预估强平价</span>
-                        <span>止损止盈</span>
-                    </Card>
-                    <Card id="order-list" className='bg-surface-secondary flex-1 w-full overflow-y-auto rounded-none'>
-                        {orders.map(order => (
-                            <div key={order.id} className="px-4 h-[70px]  flex-none border-b-1 grid grid-cols-9 gap-5 items-center">
-                                <div className="flex flex-col">
-                                    <span className="text-[13px] mb-1">{order.symbol?.replace('/', '')} 永续</span>
-                                    <Button isDisabled className="h-4 w-8 rounded-sm" size="sm">{order.lever}</Button>
-                                </div>
-                                <div>
-                                    <span className="text-[13px] text-red-400">{order.amount?.toFixed(2)} USDT</span>
-                                </div>
-                                <PriceDisplay price={price} />
-                                <div>
-                                    <span className="text-[13px]">{order.price?.toFixed(2)}</span>
-                                </div>
-                                <FloatingIncome price={price} order={order} />
-                                <div className="flex flex-col">
-                                    <span className="text-[13px]">{((order.amount ?? 1) / Number(order.lever?.split('.')[0])).toFixed(2)} USDT</span>
-                                    <span className="text-[13px]">{order.type}</span>
-                                </div>
-                                <div>
-                                    <Button
-                                        onPress={() => {
-                                            const getIncomePercent = () => {
-                                                if (order.side === '买') {
-                                                    return (price - (order.price ?? 0)) / (order.price ?? 0);
-                                                } else {
-                                                    if (price >= (order.price ?? 0)) {
-                                                        return -(price - (order.price ?? 0)) / (order.price ?? 0);
-                                                    } else {
-                                                        return -(price - (order.price ?? 0)) / (order.price ?? 0);
-                                                    }
-                                                }
+            <Card className='rounded-none bg-surface px-4 h-8 text-sm text-gray-400 border-b-1 grid grid-cols-9 gap-5 items-center'>
+                <span>交易品种</span>
+                <span>持仓量</span>
+                <span>标记价格</span>
+                <span>开仓均价</span>
+                <span>浮动收益</span>
+                <span>保证金</span>
+                <span>市价全平</span>
+                <span>预估强平价</span>
+                <span>止损止盈</span>
+            </Card>
+            <Card id="order-list" className='bg-surface-secondary flex-1 w-full overflow-y-auto rounded-none'>
+                {orders.map(order => (
+                    <div key={order.id} className="px-4 h-[70px]  flex-none border-b-1 grid grid-cols-9 gap-5 items-center">
+                        <div className="flex flex-col">
+                            <span className="text-[13px] mb-1">{order.symbol?.replace('/', '')} 永续</span>
+                            <Button isDisabled className="h-4 w-8 rounded-sm" size="sm">{order.lever}</Button>
+                        </div>
+                        <div>
+                            <span className="text-[13px] text-red-400">{order.amount?.toFixed(2)} USDT</span>
+                        </div>
+                        <PriceDisplay price={price} />
+                        <div>
+                            <span className="text-[13px]">{order.price?.toFixed(2)}</span>
+                        </div>
+                        <FloatingIncome price={price} order={order} />
+                        <div className="flex flex-col">
+                            <span className="text-[13px]">{((order.amount ?? 1) / Number(order.lever?.split('.')[0])).toFixed(2)} USDT</span>
+                            <span className="text-[13px]">{order.type}</span>
+                        </div>
+                        <div>
+                            <Button
+                                onPress={() => {
+                                    const getIncomePercent = () => {
+                                        if (order.side === '买') {
+                                            return (price - (order.price ?? 0)) / (order.price ?? 0);
+                                        } else {
+                                            if (price >= (order.price ?? 0)) {
+                                                return -(price - (order.price ?? 0)) / (order.price ?? 0);
+                                            } else {
+                                                return -(price - (order.price ?? 0)) / (order.price ?? 0);
                                             }
-                                            setAssets(assets + (order.amount ?? 1) / Number(order.lever?.split('.')[0]) + (getIncomePercent() * (order.amount ?? 1)))
-                                            removeOrder(order.id ?? '')
-                                        }}
-                                        className="h-8 rounded-full bg-surface-tertiary">
-                                        市价全平
-                                    </Button>
-                                </div>
-                                <div>
-                                    <span className="text-[13px]">{order.forcedliquidation === -1 ? '-' : (order.forcedliquidation)?.toFixed(2)}</span>
-                                </div>
+                                        }
+                                    }
+                                    setAssets(assets + (order.amount ?? 1) / Number(order.lever?.split('.')[0]) + (getIncomePercent() * (order.amount ?? 1)))
+                                    removeOrder(order.id ?? '')
+                                }}
+                                className="h-8 rounded-full bg-surface-tertiary">
+                                市价全平
+                            </Button>
+                        </div>
+                        <div>
+                            <span className="text-[13px]">{order.forcedliquidation === -1 ? '-' : (order.forcedliquidation)?.toFixed(2)}</span>
+                        </div>
 
-                                <TakeProfitandStopLoss takeprofit={order.takeprofit ?? -1} stoploss={order.stoploss ?? -1} />
-                            </div>
-                        ))}
-                    </Card>
-                </>
-            )}
+                        <TakeProfitandStopLoss takeprofit={order.takeprofit ?? -1} stoploss={order.stoploss ?? -1} />
+                    </div>
+                ))}
+            </Card>
         </>
     );
 }
