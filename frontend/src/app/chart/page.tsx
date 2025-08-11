@@ -24,8 +24,7 @@ import ThemeSwitch from '@/components/heroui/theme-switch';
 import Lines from '@/components/chart_tools/lines';
 import DeleteOverlay from '@/components/chart_tools/delete_overlay';
 import HiddenOverlay from '@/components/chart_tools/hidden_overlay';
-
-
+import Indicators from '@/components/chart_tools/indicators';
 
 
 // icon
@@ -60,6 +59,10 @@ export default function ChartPage() {
           <Divider orientation="vertical" className='mr-2 ml-2 h-8' />
           <div className='flex items-center'>
             <SelectTime />
+          </div>
+          <Divider orientation="vertical" className='mr-2 ml-2 h-8' />
+          <div className='flex items-center'>
+            <Indicators />
           </div>
           <Divider orientation="vertical" className='mr-2 ml-2 h-8' />
           <div className='flex items-center'>

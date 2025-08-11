@@ -10,9 +10,6 @@ export default function Home() {
       <button onClick={() => {
         router.push('/chart');
       }}>Chart</button>
-      <button onClick={() => {
-        router.push('/klinechart');
-      }}>KlineChart</button>
     </>
   );
 }
