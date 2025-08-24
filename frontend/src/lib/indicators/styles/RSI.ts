@@ -1,45 +1,37 @@
-export const MA = {
+export const RSI = {
     indicator: {
-        name: 'MA',
-        id: 'ma',
-        shortName: 'MA',
+        name: 'RSI',
+        id: 'rsi',
+        shortName: 'RSI',
         precision: 2,
-        calcParams: [5, 10, 30, 60],
+        calcParams: [6, 12, 24],
         shouldOhlc: false,
         shouldFormatBigNumber: false,
         visible: true,
         zLevel: 0,
-        series: 'price',
+        series: 'normal',
         figures: [
             {
-                key: 'ma5',
+                key: 'rsi6',
                 type: 'line',
                 styles: () => ({
-                    color: '#1f77b4',
+                    color: '#ff6b6b',
                     size: 1
                 })
             },
             {
-                key: 'ma10',
+                key: 'rsi12',
                 type: 'line',
                 styles: () => ({
-                    color: '#ff7f0e',
+                    color: '#4ecdc4',
                     size: 1
                 })
             },
             {
-                key: 'ma30',
+                key: 'rsi24',
                 type: 'line',
                 styles: () => ({
-                    color: '#2ca02c',
-                    size: 1
-                })
-            },
-            {
-                key: 'ma60',
-                type: 'line',
-                styles: () => ({
-                    color: '#d62728',
+                    color: '#45b7d1',
                     size: 1
                 })
             }
@@ -62,7 +54,7 @@ export const MA = {
             },
             axis: {
                 show: true,
-                name: 'MA',
+                name: 'RSI',
                 axisLine: {
                     show: true,
                     color: '#393939',

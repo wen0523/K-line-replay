@@ -1,46 +1,40 @@
-export const MA = {
+export const MACD = {
     indicator: {
-        name: 'MA',
-        id: 'ma',
-        shortName: 'MA',
+        name: 'MACD',
+        id: 'macd',
+        shortName: 'MACD',
         precision: 2,
-        calcParams: [5, 10, 30, 60],
+        calcParams: [12, 26, 9],
         shouldOhlc: false,
         shouldFormatBigNumber: false,
         visible: true,
         zLevel: 0,
-        series: 'price',
+        series: 'normal',
         figures: [
             {
-                key: 'ma5',
+                key: 'dif',
                 type: 'line',
                 styles: () => ({
-                    color: '#1f77b4',
+                    color: '#ff6b6b',
                     size: 1
                 })
             },
             {
-                key: 'ma10',
+                key: 'dea',
                 type: 'line',
                 styles: () => ({
-                    color: '#ff7f0e',
+                    color: '#4ecdc4',
                     size: 1
                 })
             },
             {
-                key: 'ma30',
-                type: 'line',
-                styles: () => ({
-                    color: '#2ca02c',
-                    size: 1
-                })
-            },
-            {
-                key: 'ma60',
-                type: 'line',
-                styles: () => ({
-                    color: '#d62728',
-                    size: 1
+                key: 'macd',
+                type: 'bar',
+                baseValue: 0,
+                styles: (data: { macd: number }) => ({
+                    color: data.macd >= 0 ? '#26a69a' : '#ef5350',
+                    borderColor: data.macd >= 0 ? '#26a69a' : '#ef5350',
+                    borderSize: 1
                 })
             }
         ],
@@ -62,7 +56,7 @@ export const MA = {
             },
             axis: {
                 show: true,
-                name: 'MA',
+                name: 'MACD',
                 axisLine: {
                     show: true,
                     color: '#393939',

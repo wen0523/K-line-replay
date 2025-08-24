@@ -1,10 +1,10 @@
-export const MA = {
+export const EMA = {
     indicator: {
-        name: 'MA',
-        id: 'ma',
-        shortName: 'MA',
+        name: 'EMA',
+        id: 'ema',
+        shortName: 'EMA',
         precision: 2,
-        calcParams: [5, 10, 30, 60],
+        calcParams: [6, 12, 20],
         shouldOhlc: false,
         shouldFormatBigNumber: false,
         visible: true,
@@ -12,7 +12,7 @@ export const MA = {
         series: 'price',
         figures: [
             {
-                key: 'ma5',
+                key: 'ema6',
                 type: 'line',
                 styles: () => ({
                     color: '#1f77b4',
@@ -20,7 +20,7 @@ export const MA = {
                 })
             },
             {
-                key: 'ma10',
+                key: 'ema12',
                 type: 'line',
                 styles: () => ({
                     color: '#ff7f0e',
@@ -28,18 +28,10 @@ export const MA = {
                 })
             },
             {
-                key: 'ma30',
+                key: 'ema20',
                 type: 'line',
                 styles: () => ({
                     color: '#2ca02c',
-                    size: 1
-                })
-            },
-            {
-                key: 'ma60',
-                type: 'line',
-                styles: () => ({
-                    color: '#d62728',
                     size: 1
                 })
             }
@@ -62,7 +54,7 @@ export const MA = {
             },
             axis: {
                 show: true,
-                name: 'MA',
+                name: 'EMA',
                 axisLine: {
                     show: true,
                     color: '#393939',

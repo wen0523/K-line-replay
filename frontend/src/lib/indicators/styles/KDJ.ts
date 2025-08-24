@@ -1,45 +1,37 @@
-export const MA = {
+export const KDJ = {
     indicator: {
-        name: 'MA',
-        id: 'ma',
-        shortName: 'MA',
+        name: 'KDJ',
+        id: 'kdj',
+        shortName: 'KDJ',
         precision: 2,
-        calcParams: [5, 10, 30, 60],
+        calcParams: [9, 3, 3],
         shouldOhlc: false,
         shouldFormatBigNumber: false,
         visible: true,
         zLevel: 0,
-        series: 'price',
+        series: 'normal',
         figures: [
             {
-                key: 'ma5',
+                key: 'k',
                 type: 'line',
                 styles: () => ({
-                    color: '#1f77b4',
+                    color: '#ff6b6b',
                     size: 1
                 })
             },
             {
-                key: 'ma10',
+                key: 'd',
                 type: 'line',
                 styles: () => ({
-                    color: '#ff7f0e',
+                    color: '#4ecdc4',
                     size: 1
                 })
             },
             {
-                key: 'ma30',
+                key: 'j',
                 type: 'line',
                 styles: () => ({
-                    color: '#2ca02c',
-                    size: 1
-                })
-            },
-            {
-                key: 'ma60',
-                type: 'line',
-                styles: () => ({
-                    color: '#d62728',
+                    color: '#45b7d1',
                     size: 1
                 })
             }
@@ -62,7 +54,7 @@ export const MA = {
             },
             axis: {
                 show: true,
-                name: 'MA',
+                name: 'KDJ',
                 axisLine: {
                     show: true,
                     color: '#393939',

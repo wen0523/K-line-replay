@@ -1,10 +1,10 @@
-export const MA = {
+export const BOLL = {
     indicator: {
-        name: 'MA',
-        id: 'ma',
-        shortName: 'MA',
+        name: 'BOLL',
+        id: 'boll',
+        shortName: 'BOLL',
         precision: 2,
-        calcParams: [5, 10, 30, 60],
+        calcParams: [20, 2],
         shouldOhlc: false,
         shouldFormatBigNumber: false,
         visible: true,
@@ -12,34 +12,26 @@ export const MA = {
         series: 'price',
         figures: [
             {
-                key: 'ma5',
+                key: 'upper',
                 type: 'line',
                 styles: () => ({
-                    color: '#1f77b4',
+                    color: '#ff6b6b',
                     size: 1
                 })
             },
             {
-                key: 'ma10',
+                key: 'middle',
                 type: 'line',
                 styles: () => ({
-                    color: '#ff7f0e',
+                    color: '#4ecdc4',
                     size: 1
                 })
             },
             {
-                key: 'ma30',
+                key: 'lower',
                 type: 'line',
                 styles: () => ({
-                    color: '#2ca02c',
-                    size: 1
-                })
-            },
-            {
-                key: 'ma60',
-                type: 'line',
-                styles: () => ({
-                    color: '#d62728',
+                    color: '#45b7d1',
                     size: 1
                 })
             }
@@ -62,7 +54,7 @@ export const MA = {
             },
             axis: {
                 show: true,
-                name: 'MA',
+                name: 'BOLL',
                 axisLine: {
                     show: true,
                     color: '#393939',
